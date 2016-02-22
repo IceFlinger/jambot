@@ -26,12 +26,6 @@ def video_id(value):
 	return None
 
 class moduleClass(botModule):
-	def initialize(self):
-		pass
-	def on_join(self, c, e):
-		pass
-	def on_privmsg(self, c, e):
-		pass
 	def do_command(self, c, e, command, args, admin):
 		if ((command == "yt") or (command == "youtube")) and len(args) > 0:
 			try:
@@ -60,9 +54,9 @@ class moduleClass(botModule):
 				video_views = results["items"][0]["statistics"]["viewCount"]
 				msg = video_title + ": by " + channel_name + ", (" + video_length.lower() + ") " + video_views + " views http://youtu.be/" + videoId
 				#msg = msg.encode('ascii', 'ignore')
-				c.privmsg(e.target, msg)
+				self.send(e.target, msg)
 			except:
-				c.privmsg(e.target, "Problem youtubing that")
+				self.send(e.target, "Problem youtubing that")
 				for error in sys.exc_info():
 					print(str(error))
 				pass
@@ -88,6 +82,6 @@ class moduleClass(botModule):
 					video_views = results["items"][0]["statistics"]["viewCount"]
 					msg = video_title + ": by " + channel_name + ", (" + video_length.lower() + ") " + video_views + " views http://youtu.be/" + videoId
 					#msg = msg.encode('ascii', 'ignore')
-					c.privmsg(e.target, msg)
+					self.send(e.target, msg)
 		except:
 			pass

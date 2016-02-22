@@ -24,43 +24,23 @@ class botModule():
 		self.name = name
 		self.settings = {}
 		self._load_settings()
-		self.initialize()
-
-	def initialize(self):
+		
+	def on_start(self):
 		pass
-	def on_join(self, c, e):
+	def initialize(self, bot):
+		self.bot=bot
+		self.on_start()
+	def send(self, chan, msg):
+		self.bot.send_msg(chan, msg, self.name)
+	def on_pubmsg(self, c, e):
 		pass
-	def on_kick(self, c, e):
+	def on_send(self, chan, msg, modulename):
 		pass
-	def on_mode(self, c, e):
-		pass
-	def on_welcome(self, c, e):
-		pass
-	def on_part(self, c, e):
-		pass
-	def on_ping(self, c, e):
-		pass
-	def on_privmsg(self, c, e):
-		pass
-	def on_privnotice(self, c, e):
+	def on_event(self, c, e):
 		pass
 	def do_command(self, c, e, command, args, admin):
 		pass
-	def on_pubmsg(self, c, e):
-		pass
-	def on_pubnotice(self, c, e):
-		pass
-	def on_quit(self, c, e):
-		pass
-	def on_invite(self, c, e):
-		pass
-	def on_pong(self, c, e):
-		pass
-	def on_action(self, c, e):
-		pass
-	def on_topic(self, c, e):
-		pass
-	def on_nick(self, c, e):
+	def on_privmsg(self, c, e):
 		pass
 
 class botMain(irc.bot.SingleServerIRCBot):
@@ -103,35 +83,41 @@ class botMain(irc.bot.SingleServerIRCBot):
 		print("Connected!")
 		self.start()
 
-	def on_error(self, c, e):
-		for module in self.modules:
-			module.on_error(c, e)
-
-	def on_join(self, c, e):
-		for module in self.modules:
-			module.on_join(c, e)
-
-	def on_kick(self, c, e):
-		for module in self.modules:
-			module.on_kick(c, e)
-
-	def on_mode(self, c, e):
-		for module in self.modules:
-			module.on_mode(c, e)
-
 	def on_welcome(self, c, e):
 		for channel in self.settings["channels"]:
 			c.join(channel)
+		self.c=c
 		for module in self.modules:
-			module.on_welcome(c, e)
+			module.initialize(self)
+
+	def send_msg(self, chan, msg, modulename):
+		self.c.privmsg(chan, msg)
+		for module in self.modules:
+			module.on_send(chan, msg, modulename)
+
+	def on_error(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+
+	def on_join(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+
+	def on_kick(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+
+	def on_mode(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
 
 	def on_part(self, c, e):
 		for module in self.modules:
-			module.on_part(c, e)
+			module.on_event(c, e)
 
 	def on_ping(self, c, e):
 		for module in self.modules:
-			module.on_ping(c, e)
+			module.on_privmsg(c, e)
 
 	def on_privmsg(self, c, e):
 		for module in self.modules:
@@ -139,7 +125,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 
 	def on_privnotice(self, c, e):
 		for module in self.modules:
-			module.on_privnotice(c, e)
+			module.on_privmsg(c, e)
 
 	def on_command(self, c, e):
 		command = e.arguments[0].split()[0].split(self.settings["command_prefix"])[1]
@@ -152,9 +138,9 @@ class botMain(irc.bot.SingleServerIRCBot):
 			if command=="join":
 				for arg in args:
 					if arg[0]!="#":
-						c.privmsg(e.target, "Invalid channel name")
+						self.send_msg(e.target, "Invalid channel name", "swampbot")
 					else:
-						c.privmsg(e.target, "Joining " + arg)
+						self.send_msg(e.target, "Joining " + arg, "swampbot")
 						c.join(arg)
 			elif command=="part":
 				if len(args)==0:
@@ -162,40 +148,40 @@ class botMain(irc.bot.SingleServerIRCBot):
 				else:
 					for arg in args:
 						if arg[0]!="#":
-							c.privmsg(e.target, "Invalid channel name")
+							self.send_msg(e.target, "Invalid channel name", "swampbot")
 						else:
-							c.privmsg(e.target, "Parting " + arg)
+							self.send_msg(e.target, "Parting " + arg, "swampbot")
 							c.part(arg)
 			elif command=="nick":
 				if args[0].isalnum():
-					c.privmsg(e.target, "Setting nick to " + args[0])
+					self.send_msg(e.target, "Setting nick to " + args[0], "swampbot")
 					c.nick(args[0])
 					self.settings["nickname"]=args[0]
 				else:
-					c.privmsg(e.target, "Invalid nick (" + args[0]+ ")")
+					self.send_msg(e.target, "Invalid nick (" + args[0]+ ")", "swampbot")
 			elif command=="setprefix":
-				c.privmsg(e.target, "Setting command prefix to " + args[0][0])
+				self.send_msg(e.target, "Setting command prefix to " + args[0][0], "swampbot")
 				self.settings["command_prefix"]=args[0][0]
 			elif command=="addowner":
 				for arg in args:
 					if "@" not in arg:
-						c.privmsg(e.target, "Invalid host")
+						self.send_msg(e.target, "Invalid host", "swampbot")
 					else:
-						c.privmsg(e.target, "Adding " + arg + "to owners")
+						self.send_msg(e.target, "Adding " + arg + "to owners", "swampbot")
 						self.settings["owners"] += " " + arg
 			elif command=="quit":
-				c.privmsg(e.target, "Quitting...")
+				self.send_msg(e.target, "Quitting...", "swampbot")
 				self.shutdown()
 			else:
 				break
 			return
 		if command=="version":
-			c.privmsg(e.target, "Version: " + self.settings["version"])
+			self.send_msg(e.target, "Version: " + self.settings["version"], "swampbot")
 		elif command=="say":
 			msg = ""
 			for arg in args:
 				msg += arg + " "
-			c.privmsg(e.target, msg)
+			self.send_msg(e.target, msg, "swampbot")
 		else:
 			for module in self.modules:
 				module.do_command(c, e, command, args, admin)
@@ -212,27 +198,27 @@ class botMain(irc.bot.SingleServerIRCBot):
 
 	def on_quit(self, c, e):
 		for module in self.modules:
-			module.on_quit(c, e)
+			module.on_event(c, e)
 
 	def on_invite(self, c, e):
 		for module in self.modules:
-			module.on_invite(c, e)
+			module.on_event(c, e)
 
 	def on_pong(self, c, e):
 		for module in self.modules:
-			module.on_pong(c, e)
+			module.on_event(c, e)
 
 	def on_action(self, c, e):
 		for module in self.modules:
-			module.on_action(c, e)
+			module.on_event(c, e)
 
 	def on_topic(self, c, e):
 		for module in self.modules:
-			module.on_topic(c, e)
+			module.on_event(c, e)
 
 	def on_nick(self, c, e):
 		for module in self.modules:
-			module.on_nick(c, e)
+			module.on_event(c, e)
 
 	def shutdown(self):
 		print("Disconnecting...")
