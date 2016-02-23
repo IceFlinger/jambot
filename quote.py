@@ -1,5 +1,6 @@
 from jambot import botModule
 #Quote module
+
 class moduleClass(botModule):
     def on_start(self):
         global buffernick
