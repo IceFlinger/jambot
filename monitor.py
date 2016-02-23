@@ -1,5 +1,5 @@
-from swampbot import botModule
-#Full sample module
+from jambot import botModule
+#Monitor Module
 class moduleClass(botModule):
 	def on_start(self):
 		pass

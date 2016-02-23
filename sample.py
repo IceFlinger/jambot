@@ -1,6 +1,6 @@
-from swampbot import botModule
+from jambot import botModule
 #Small sample module
-#self.send(e.target(), msg)
+#self.send(e.target, msg)
 class moduleClass(botModule):
 	def on_start(self):
 		pass

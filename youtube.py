@@ -1,4 +1,4 @@
-from swampbot import botModule
+from jambot import botModule
 import requests
 from urllib.parse import urlparse
 import re
