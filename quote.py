@@ -4,30 +4,26 @@ class moduleClass(botModule):
     def on_start(self):
         global buffernick
         global buffermsg
-        global radbuffer
+        #global radbuffer
         buffernick = 'wew'
         buffermsg = 'wew'
-        radbuffer = 'wew'
-
+        #radbuffer = 'wew'
     pass
 
     def on_pubmsg(self, c, e):
         global buffernick
         global buffermsg
-        global radbuffer
-        print('buffernick 1: ' + buffernick)
-        print('buffermsg 1: ' + buffermsg)
-        print(e)
-        a = e.arguments[0].split("!", 1)
-        if len(a) > 1:
-            self.do_command(e, a[1].strip())
+        #global radbuffer
+        #print('buffernick 1: ' + buffernick)
+        #print('buffermsg 1: ' + buffermsg)
+        #print(e)
         buffernick = e.source.nick
         buffermsg = e.arguments[0]
-        print('buffernick 2: ' + buffernick)
-        print('buffermsg 2: ' + buffermsg)
-        if e.source == 'Radbot!Radbot@krad-no7d07.house':
-            radbuffer == e.arguments[0]
-        return
+        #print('buffernick 2: ' + buffernick)
+        #print('buffermsg 2: ' + buffermsg)
+        #if e.source.nick == 'Radbot':
+        #    radbuffer == e.arguments[0]
+        pass
 
     def on_send(self, chan, msg, modulename):
         pass
@@ -39,7 +35,6 @@ class moduleClass(botModule):
         if ((command == "q") or (command == "quote")):
             global buffernick
             global buffermsg
-            global radbuffer
             if buffernick and buffermsg == 'wew':
                 self.send(e.target, "No quote stored")
             elif buffermsg == '!quote':
@@ -47,3 +42,10 @@ class moduleClass(botModule):
             else:
                 self.send(e.target, "Quote: " + buffernick + ": " + buffermsg)
         pass
+        #if (command == "radquote"):
+        #    global radbuffer
+        #    if radbuffer == 'wew':
+        #        self.send(e.target, "No Radquote")
+        #    else:
+        #        self.send(e.target, "Radquote: " + radbuffer)
+        #    pass
