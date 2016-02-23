@@ -5,6 +5,7 @@ import configparser
 import traceback
 import importlib
 import ssl
+import sys
 
 # jambot modular IRC bot
 # by ice at irc.kickinrad.tv
@@ -13,17 +14,17 @@ import ssl
 config_file = "jambot.cfg"
 
 class botModule():
-	def _load_settings(self):
+	def _load_settings(self, config_file):
 		self.config = configparser.ConfigParser()
 		self.config.read(config_file)
 		if self.name in self.config.sections():
 			for key in self.config[self.name]:
 				self.settings[key] = self.config[self.name][key]
 
-	def __init__(self, name): 
+	def __init__(self, name, config_file): 
 		self.name = name
 		self.settings = {}
-		self._load_settings()
+		self._load_settings(config_file)
 		
 	def on_start(self):
 		pass
@@ -65,7 +66,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 	def _load_modules(self):
 		for module in self.settings["modules"]:
 			moduleClass = getattr(importlib.import_module(module), 'moduleClass')
-			self.modules.append(moduleClass(module))
+			self.modules.append(moduleClass(module, config_file))
 			print("Loaded " + module)
 
 	def __init__(self): 
@@ -225,6 +226,13 @@ class botMain(irc.bot.SingleServerIRCBot):
 		self.die()
 
 if __name__ == "__main__":
+	if "--help" in sys.argv:
+		print("Jambot Modular IRC Bot. Usage:")
+		print(" jambot.py [config file]")
+		print("Defaults to jambot.cfg")
+		sys.exit(0)
+	if len(sys.argv) > 1:
+		config_file = sys.argv[1]
 	bot = botMain()
 	try:
 		bot.initialize()
