@@ -1,8 +1,5 @@
 from jambot import botModule
-
-
-# Google module
-# self.send(e.target, msg)
+#Quote module
 class moduleClass(botModule):
     def on_start(self):
         global buffernick
