@@ -43,6 +43,8 @@ class botModule():
 		pass
 	def on_privmsg(self, c, e):
 		pass
+	def shutdown(self):
+		pass
 
 class botMain(irc.bot.SingleServerIRCBot):
 	def _load_settings(self):
@@ -98,7 +100,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 
 	def on_error(self, c, e):
 		for module in self.modules:
-			module.on_event(c, e)
+			module.on_privmsg(c, e)
 
 	def on_join(self, c, e):
 		for module in self.modules:
@@ -222,6 +224,8 @@ class botMain(irc.bot.SingleServerIRCBot):
 			module.on_event(c, e)
 
 	def shutdown(self):
+		for module in self.modules:
+			module.shutdown()
 		print("Disconnecting...")
 		self.die()
 

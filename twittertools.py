@@ -39,7 +39,7 @@ class moduleClass(botModule):
 			print("couldn't initiate twitter feed")
 			for error in sys.exc_info():
 				print(str(error))
-			raise
+
 
 	def check_twitter(self):
 		try:
@@ -88,7 +88,7 @@ class moduleClass(botModule):
 			for error in sys.exc_info():
 				print(str(error))
 			print("Error fetching tweets")
-			raise
+
 	def twitter_schedule(self, checktimer):
 		timer = Timer(checktimer, self.twitter_execute, ())
 		timer.setDaemon(True)
@@ -115,8 +115,11 @@ class moduleClass(botModule):
 			print("Error tweeting")
 			raise
 	def on_event(self, c, e):
-		if e.type=="join":
-			self.channels.append(e.target)
+		if e.source.split("!")[0]==c.nickname:
+			if e.type=="join":
+				self.channels.append(e.target)
+			elif e.type=="part":
+				self.channels.remove(e.target)
 	def do_command(self, c, e, command, args, admin):
 		msg = ""
 		if ((command == "tweet") and admin):
@@ -146,6 +149,6 @@ class moduleClass(botModule):
 						for error in sys.exc_info():
 							print(str(error))
 						msg = "Error tweeting"
-		self.send(e.target, msg)
+			self.send(e.target, msg)
 	def on_privmsg(self, c, e):
 		pass

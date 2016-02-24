@@ -14,3 +14,5 @@ class moduleClass(botModule):
 		pass
 	def on_privmsg(self, c, e):
 		pass
+	def shutdown(self):
+		pass
