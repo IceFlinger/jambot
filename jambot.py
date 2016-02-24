@@ -180,11 +180,6 @@ class botMain(irc.bot.SingleServerIRCBot):
 			return
 		if command=="version":
 			self.send_msg(e.target, "Version: " + self.settings["version"], "jambot")
-		elif command=="say":
-			msg = ""
-			for arg in args:
-				msg += arg + " "
-			self.send_msg(e.target, msg, "jambot")
 		else:
 			for module in self.modules:
 				module.do_command(c, e, command, args, admin)

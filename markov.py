@@ -88,8 +88,6 @@ class moduleClass(botModule):
 			textconn.setopt(textconn.WRITEDATA, textbytes)
 			textconn.perform()
 			textconn.close()
-			exist_words_q = "SELECT word1, word2 FROM contexts"
-			exist_words = self.c.execute(exist_words_q).fetchall()
 			text = textbytes.getvalue().decode('iso-8859-1').split('\n')
 			wordcount = 0
 			contextcount = 0
@@ -99,21 +97,24 @@ class moduleClass(botModule):
 			for line in text:
 				links = re.findall(r'(https?://\S+)', line)
 				if not links:
+					exist_words = self.c.execute("SELECT word1, word2 FROM contexts WHERE instr(?, word1) > 0", [line]).fetchall()
 					words = line.split()
-					new_contexts = []
 					for word1, word2 in zip(words[:-1], words[1:]):
-						new_contexts.append((word1, word2))
-					if len(words)!=0:
-						new_contexts.append((words[-1], None))
-					for context in new_contexts:
-						if context in exist_words:
-							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", context)
+						if (word1, word2) in exist_words:
+							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
 							contextcount += 1
 						else:
-							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", context)
+							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", (word1, word2))
 							wordcount += 1
 							contextcount += 1
-							exist_words.append(context)
+					if len(words)!=0:
+						if (words[-1], None) in exist_words:
+							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (words[-1], None))
+							contextcount += 1
+						else:
+							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", (words[-1], None))
+							wordcount += 1
+							contextcount += 1
 					linecount += 1
 					if ((wordcount%100)==0):
 						print("+", end="",flush=True)
