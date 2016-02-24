@@ -27,6 +27,9 @@ class moduleClass(botModule):
         pass
 
     def on_event(self, c, e):
+        if (e.type == "action"):
+            self.buffernick = e.source.nick
+            self.buffermsg = "/me " + e.arguments[0]
         pass
 
     def do_command(self, c, e, command, args, admin):
@@ -49,5 +52,5 @@ class moduleClass(botModule):
             self.send(e.target, msg)
         pass
 
-        def shutdown(self):
-            self.db.close()
+    def shutdown(self):
+        self.conn.close()
