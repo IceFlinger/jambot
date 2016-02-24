@@ -1,10 +1,11 @@
 from jambot import botModule
 import sqlite3
 
-#Quote module
+
+# Quote module
 class moduleClass(botModule):
     def on_start(self):
-        self.conn = sqlite3.connect('whatever.db')
+        self.conn = sqlite3.connect(self.settings["database"])
         self.cql = self.conn.cursor()
         self.buffernick = 'wew'
         self.buffermsg = 'wew'
@@ -14,6 +15,7 @@ class moduleClass(botModule):
             pass
         else:
             self.cql.execute("CREATE TABLE quotes (nick text, quote text)")
+
     pass
 
     def on_pubmsg(self, c, e):
@@ -37,6 +39,8 @@ class moduleClass(botModule):
                 quote = (self.buffernick, self.buffermsg)
                 self.cql.execute("INSERT INTO quotes VALUES (?,?)", quote)
                 self.conn.commit()
+                msg = "Added quote: " + quote[0] + ": " + quote[1]
+                self.send(e.target, msg)
 
         elif ((command == "q") or (command == "quote")):
             self.cql.execute('SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1')
@@ -44,3 +48,6 @@ class moduleClass(botModule):
             msg = "Quote: " + msg[0] + ": " + msg[1]
             self.send(e.target, msg)
         pass
+
+        def shutdown(self):
+            self.db.close()
