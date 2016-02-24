@@ -10,7 +10,6 @@ import sys
 # jambot modular IRC bot
 # by ice at irc.kickinrad.tv
 
-
 config_file = "jambot.cfg"
 
 class botModule():
@@ -242,5 +241,3 @@ if __name__ == "__main__":
 	except:
 		traceback.print_exc()
 	bot.shutdown()
-
-

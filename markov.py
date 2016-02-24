@@ -13,11 +13,12 @@ class moduleClass(botModule):
 		self.db = sqlite3.connect(self.settings["database"])
 		self.replyrate = int(self.settings["replyrate"])
 		self.learning = False
+		self.maxchain = int(self.settings["maxchain"])
 		if self.settings["learning"]=="True":
 			self.learning = True
 		self.nickreplyrate = int(self.settings["nickreplyrate"])
 		self.c = self.db.cursor()
-		self.c.execute("CREATE TABLE IF NOT EXISTS contexts (word1 text, word2 text, freq int)")
+		self.c.execute("CREATE TABLE IF NOT EXISTS contexts (word1 text, word2 text, freq int DEFAULT 0, UNIQUE(word1, word2))")
 		self.db.commit()
 		
 	def on_pubmsg(self, c, e):
@@ -28,23 +29,17 @@ class moduleClass(botModule):
 		if self.learning:
 			links = re.findall(r'(https?://\S+)', msg[0])
 			if not links:
-				exist_words_q = "SELECT word1, word2 FROM contexts WHERE instr(?, word1) > 0"
-				exist_words = self.c.execute(exist_words_q, msg).fetchall()
 				words = msg[0].split()
-				new_contexts = []
 				for word1, word2 in zip(words[:-1], words[1:]):
-					new_contexts.append((word1, word2))
-				new_contexts.append((words[-1], None))
-				for context in new_contexts:
-						if context in exist_words:
-							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", context)
-						else:
-							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", context)
-							exist_words.append(context)
+					self.c.execute("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
+					self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
+				self.c.execute("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (words[-1], None))
+				self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (words[-1], None))
 				self.db.commit()
 			else:
 				print("Skipping link " + links[0])
 		if ((self.replyrate>random.randint(1,99)) or ((self.nickreplyrate>random.randint(1,99)) and (own_nick in msg[0]))):
+			chainlength = 0
 			exist_words_q = "SELECT word1, word2 FROM contexts WHERE instr(?, word2) > 0"
 			exist_words = []
 			for word in self.c.execute(exist_words_q, msg).fetchall():
@@ -67,6 +62,9 @@ class moduleClass(botModule):
 							newword = word[1]
 					if newword != currentword:
 						phrase += currentword + " "
+						chainlength += 1
+					if chainlength > self.maxchain:
+						newword = None
 					currentword = newword
 					self.db.commit()
 				print("")
@@ -89,42 +87,24 @@ class moduleClass(botModule):
 			textconn.perform()
 			textconn.close()
 			text = textbytes.getvalue().decode('iso-8859-1').split('\n')
-			wordcount = 0
-			contextcount = 0
 			linecount = 0
 			print("Learning...")
 			self.send(e.target, "Learning")
 			for line in text:
 				links = re.findall(r'(https?://\S+)', line)
 				if not links:
-					exist_words = self.c.execute("SELECT word1, word2 FROM contexts WHERE instr(?, word1) > 0", [line]).fetchall()
 					words = line.split()
 					for word1, word2 in zip(words[:-1], words[1:]):
-						if (word1, word2) in exist_words:
-							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
-							contextcount += 1
-						else:
-							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", (word1, word2))
-							wordcount += 1
-							contextcount += 1
+						self.c.execute("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
+						self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
 					if len(words)!=0:
-						if (words[-1], None) in exist_words:
-							self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (words[-1], None))
-							contextcount += 1
-						else:
-							self.c.execute("INSERT INTO contexts VALUES (?, ?, 1)", (words[-1], None))
-							wordcount += 1
-							contextcount += 1
+						self.c.execute("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (words[-1], None))
+						self.c.execute("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (words[-1], None))
 					linecount += 1
-					if ((wordcount%100)==0):
-						print("+", end="",flush=True)
-					if ((contextcount%100)==0):
-						print(".", end="",flush=True)
 					if ((linecount%1000)==0):
-						print(str(linecount/1000).split(".")[0] + "k", end="",flush=True)
-				
-			print("Learned " + str(wordcount) + " new words and " + str(contextcount) + " new contexts")
-			self.send(e.target, "Learned " + str(wordcount) + " new words and " + str(contextcount) + " new contexts")
+						print(str(linecount/1000).split(".")[0] + "k lines, ", end="",flush=True)
+			print("Learned from " + str(linecount) + " lines")
+			self.send(e.target, "Learned from " + str(linecount) + " lines")
 			self.db.commit()
 			print("Commited to DB file")
 	def on_privmsg(self, c, e):
