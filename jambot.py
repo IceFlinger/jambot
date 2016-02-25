@@ -73,7 +73,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 		
 	def _load_modules(self):
 		for module in self.modulenames:
-			moduleClass = getattr(importlib.import_module(module), 'moduleClass')
+			moduleClass = getattr(importlib.import_module("modules." + module), 'moduleClass')
 			self.modules.append(moduleClass(module, config_file, self))
 			print("Loaded " + module)
 			

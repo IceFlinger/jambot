@@ -1,7 +1,7 @@
 from jambot import botModule
 #Small sample module
 #self.send(chan, msg):
-#self.db_query(statement, params):
+#self.db_query(statement, params)
 #self.db_commit()
 class moduleClass(botModule):
 #	dbload = True
