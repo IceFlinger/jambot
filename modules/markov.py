@@ -4,6 +4,7 @@ import pycurl
 import sys
 import random
 import re
+import time
 import string
 from io import BytesIO
 #Markov chain jambot module
@@ -23,6 +24,8 @@ class moduleClass(botModule):
 	def on_start(self, c, e):
 		self.replyrate = int(self.settings["replyrate"])
 		self.learning = False
+		self.cooldown = int(self.settings["cooldown"])
+		self.lastmsg = time.time()
 		self.maxchain = int(self.settings["maxchain"])
 		if self.settings["learning"]=="True":
 			self.learning = True
@@ -43,14 +46,15 @@ class moduleClass(botModule):
 			for word1, word2 in zip(words[:-1], words[1:]):
 				self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
 				self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
-			self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
-			self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
+			if len(words)!=0:
+				self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
+				self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
 			self.db_commit()
-		if ((self.replyrate>random.randint(1,99)) or ((self.nickreplyrate>random.randint(1,99)) and (own_nick in msg))):
+		if (((self.replyrate>random.randint(1,99)) or ((self.nickreplyrate>random.randint(1,99)) and (own_nick in msg))) and (time.time()>self.lastmsg+self.cooldown)):
 			chainlength = 0
 			exist_words = []
 			for word in self.db_query("SELECT word1, word2 FROM contexts WHERE instr(?, word1) > 0", [msg]):
-				if word[0] in msg.split():
+				if word[0] in msg.split() and word[0] != own_nick:
 					exist_words.append(word)
 			if exist_words:
 				currentword = exist_words[random.randint(0,len(exist_words)-1)][0]
@@ -60,7 +64,7 @@ class moduleClass(botModule):
 					total_contexts = 0
 					for word in next_words:
 						total_contexts += int(word[2])
-					selection = random.randint(0, int(total_contexts))
+					selection = random.randint(0, random.randint(0, int(total_contexts)))
 					newword = None
 					for word in next_words:
 						selection -= int(word[2])
@@ -77,6 +81,7 @@ class moduleClass(botModule):
 				print("")
 		if phrase != "":
 			self.send(e.target, phrase)
+			self.lastmsg = time.time()
 
 	def on_send(self, chan, msg, modulename):
 		pass
