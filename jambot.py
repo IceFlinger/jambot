@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import irc.client
 import irc.bot
+import sqlite3
 import configparser
 import traceback
 import importlib
@@ -13,32 +14,37 @@ import sys
 config_file = "jambot.cfg"
 
 class botModule():
+	dbload = False
 	def _load_settings(self, config_file):
 		self.config = configparser.ConfigParser()
 		self.config.read(config_file)
 		if self.name in self.config.sections():
 			for key in self.config[self.name]:
 				self.settings[key] = self.config[self.name][key]
-
-	def __init__(self, name, config_file): 
+	def __init__(self, name, config_file, bot): 
+		self.bot=bot
 		self.name = name
 		self.settings = {}
 		self._load_settings(config_file)
-		
-	def on_start(self):
+	def on_start(self, c, e):
 		pass
-	def initialize(self, bot):
-		self.bot=bot
-		self.on_start()
+	def on_load_db(self):
+		pass
+
 	def send(self, chan, msg):
 		self.bot.send_msg(chan, msg, self.name)
-	def on_pubmsg(self, c, e):
+	def db_query(self, statement, params=()):
+		return self.bot.database_query(statement, params)
+	def db_commit(self):
+		self.bot.database_commit()
+
+	def do_command(self, c, e, command, args, admin):
 		pass
 	def on_send(self, chan, msg, modulename):
 		pass
-	def on_event(self, c, e):
+	def on_pubmsg(self, c, e):
 		pass
-	def do_command(self, c, e, command, args, admin):
+	def on_event(self, c, e):
 		pass
 	def on_privmsg(self, c, e):
 		pass
@@ -49,91 +55,82 @@ class botMain(irc.bot.SingleServerIRCBot):
 	def _load_settings(self):
 		self.config = configparser.ConfigParser()
 		self.config.read(config_file)
-		self.settings["modules"] = self.config["settings"]["modules"].split()
-		self.settings["channels"] = self.config["settings"]["channels"].split()
-		self.settings["nickname"] = self.config["settings"]["nickname"]
-		self.settings["realname"] = self.config["settings"]["realname"]
-		self.settings["serverhost"] = self.config["settings"]["serverhost"]
-		self.settings["serverport"] = int(self.config["settings"]["serverport"])
-		self.settings["serverpass"] = self.config["settings"]["serverpass"]
-		self.settings["server"] = [ irc.bot.ServerSpec(self.settings["serverhost"], self.settings["serverport"], self.settings["serverpass"]) ]
-		self.settings["ssl"] = False
+		self.modulenames = self.config["settings"]["modulenames"].split()
+		self.database = self.config["settings"]["database"]
+		self.channellist = self.config["settings"]["channellist"].split()
+		self.nickname = self.config["settings"]["nickname"]
+		self.realname = self.config["settings"]["realname"]
+		self.serverhost = self.config["settings"]["serverhost"]
+		self.serverport = int(self.config["settings"]["serverport"])
+		self.serverpass = self.config["settings"]["serverpass"]
+		self.server = [ irc.bot.ServerSpec(self.serverhost, self.serverport, self.serverpass) ]
+		self.ssl = False
 		if self.config["settings"]["ssl"]=="True":
-			self.settings["ssl"] = True
-		self.settings["command_prefix"] = self.config["settings"]["command_prefix"][0]
-		self.settings["owner_hosts"] = self.config["settings"]["owner_hosts"].split()
-		self.settings["version"] = self.config["settings"]["version"]
+			self.ssl = True
+		self.command_prefix = self.config["settings"]["command_prefix"][0]
+		self.owner_hosts = self.config["settings"]["owner_hosts"].split()
+		self.version = self.config["settings"]["version"]
 		
 	def _load_modules(self):
-		for module in self.settings["modules"]:
+		for module in self.modulenames:
 			moduleClass = getattr(importlib.import_module(module), 'moduleClass')
-			self.modules.append(moduleClass(module, config_file))
+			self.modules.append(moduleClass(module, config_file, self))
 			print("Loaded " + module)
+			
+	def _load_db(self):
+		for module in self.modules:
+			if module.dbload:
+				if self.db == None:
+					self.db = sqlite3.connect(self.database)
+				module.on_load_db()
 
 	def __init__(self): 
 		self.settings = {}
 		self.modules = []
+		self.db = None
 		self._load_settings()
 		self._load_modules()
+		self._load_db()
 
 	def initialize(self):
 		print("Connecting...")
 		reactor = irc.connection.Factory()
-		if self.settings["ssl"]:
+		if self.ssl:
 			reactor = irc.connection.Factory(wrapper=ssl.wrap_socket)
-		irc.bot.SingleServerIRCBot.__init__(self,self.settings["server"], self.settings["nickname"], self.settings["realname"], connect_factory=reactor)
-		print("Connected!")
+		irc.bot.SingleServerIRCBot.__init__(self,self.server, self.nickname, self.realname, connect_factory=reactor)
 		self.start()
 
 	def on_welcome(self, c, e):
-		for channel in self.settings["channels"]:
+		print("Connected!")
+		for channel in self.channellist:
 			c.join(channel)
 		self.c=c
 		for module in self.modules:
-			module.initialize(self)
+			module.on_start(c, e)
 
 	def send_msg(self, chan, msg, modulename):
 		self.c.privmsg(chan, msg)
 		for module in self.modules:
 			module.on_send(chan, msg, modulename)
 
-	def on_error(self, c, e):
-		for module in self.modules:
-			module.on_privmsg(c, e)
+	def database_query(self, statement, params):
+		return self.db.cursor().execute(statement, params).fetchall()
 
-	def on_join(self, c, e):
-		for module in self.modules:
-			module.on_event(c, e)
+	def database_commit(self):
+		self.db.commit()
 
-	def on_kick(self, c, e):
-		for module in self.modules:
-			module.on_event(c, e)
-
-	def on_mode(self, c, e):
-		for module in self.modules:
-			module.on_event(c, e)
-
-	def on_part(self, c, e):
-		for module in self.modules:
-			module.on_event(c, e)
-
-	def on_ping(self, c, e):
-		for module in self.modules:
-			module.on_privmsg(c, e)
-
-	def on_privmsg(self, c, e):
-		for module in self.modules:
-			module.on_privmsg(c, e)
-
-	def on_privnotice(self, c, e):
-		for module in self.modules:
-			module.on_privmsg(c, e)
+	def on_pubmsg(self, c, e):
+		if e.arguments[0][0]==self.command_prefix:
+			self.on_command(c, e)
+		else:
+			for module in self.modules:
+				module.on_pubmsg(c, e)
 
 	def on_command(self, c, e):
-		command = e.arguments[0].split()[0].split(self.settings["command_prefix"])[1]
+		command = e.arguments[0].split()[0].split(self.command_prefix)[1]
 		args = e.arguments[0].split()[1:]
 		admin = False
-		for host in self.settings["owner_hosts"]:
+		for host in self.owner_hosts:
 			if e.source.split("@")[1]==host:
 				admin = True
 		while admin:
@@ -158,19 +155,19 @@ class botMain(irc.bot.SingleServerIRCBot):
 				if args[0].isalnum():
 					self.send_msg(e.target, "Setting nick to " + args[0], "jambot")
 					c.nick(args[0])
-					self.settings["nickname"]=args[0]
+					self.nickname=args[0]
 				else:
 					self.send_msg(e.target, "Invalid nick (" + args[0]+ ")", "jambot")
 			elif command=="setprefix":
 				self.send_msg(e.target, "Setting command prefix to " + args[0][0], "jambot")
-				self.settings["command_prefix"]=args[0][0]
+				self.command_prefix=args[0][0]
 			elif command=="addowner":
 				for arg in args:
 					if "@" not in arg:
 						self.send_msg(e.target, "Invalid host", "jambot")
 					else:
 						self.send_msg(e.target, "Adding " + arg + "to owners", "jambot")
-						self.settings["owners"] += " " + arg
+						self.owners += " " + arg
 			elif command=="quit":
 				self.send_msg(e.target, "Quitting...", "jambot")
 				self.shutdown()
@@ -178,48 +175,61 @@ class botMain(irc.bot.SingleServerIRCBot):
 				break
 			return
 		if command=="version":
-			self.send_msg(e.target, "Version: " + self.settings["version"], "jambot")
+			self.send_msg(e.target, "Version: " + self.version, "jambot")
 		else:
 			for module in self.modules:
 				module.do_command(c, e, command, args, admin)
 
-	def on_pubmsg(self, c, e):
-		if e.arguments[0][0]==self.settings["command_prefix"]:
-			self.on_command(c, e)
+	def on_error(self, c, e):
 		for module in self.modules:
-			module.on_pubmsg(c, e)
-
+			module.on_privmsg(c, e)
+	def on_join(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+	def on_kick(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+	def on_mode(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+	def on_part(self, c, e):
+		for module in self.modules:
+			module.on_event(c, e)
+	def on_ping(self, c, e):
+		for module in self.modules:
+			module.on_privmsg(c, e)
+	def on_privmsg(self, c, e):
+		for module in self.modules:
+			module.on_privmsg(c, e)
+	def on_privnotice(self, c, e):
+		for module in self.modules:
+			module.on_privmsg(c, e)
 	def on_pubnotice(self, c, e):
 		for module in self.modules:
-			module.on_pubmsg(c, e)
-
+			module.on_event(c, e)
 	def on_quit(self, c, e):
 		for module in self.modules:
 			module.on_event(c, e)
-
 	def on_invite(self, c, e):
 		for module in self.modules:
 			module.on_event(c, e)
-
 	def on_pong(self, c, e):
 		for module in self.modules:
-			module.on_event(c, e)
-
+			module.on_privmsg(c, e)
 	def on_action(self, c, e):
 		for module in self.modules:
 			module.on_event(c, e)
-
 	def on_topic(self, c, e):
 		for module in self.modules:
 			module.on_event(c, e)
-
 	def on_nick(self, c, e):
 		for module in self.modules:
 			module.on_event(c, e)
-
 	def shutdown(self):
 		for module in self.modules:
 			module.shutdown()
+		if self.db != None:
+			self.db.close()
 		print("Disconnecting...")
 		self.die()
 

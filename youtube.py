@@ -9,9 +9,9 @@ import sys
 def video_id(value):
 	"""
 	Examples:
-	- http://youtu.be/SA2iWivDJiE
-	- http://www.youtube.com/watch?v=_oPAwA_Udwc&feature=feedu
-	- http://www.youtube.com/v/SA2iWivDJiE?version=3&amp;hl=en_US
+	- http://youtu.be/4txVqr1eNwc
+	- http://www.youtube.com/watch?v=4txVqr1eNwc&feature=feedu
+	- http://www.youtube.com/v/4txVqr1eNwc?version=3&amp;hl=en_US
 	"""
 	query = urlparse(value)
 	if query.hostname == 'youtu.be':
@@ -26,6 +26,9 @@ def video_id(value):
 	return None
 
 class moduleClass(botModule):
+	def on_start(self, c, e):
+		self.lastid = ""
+
 	def do_command(self, c, e, command, args, admin):
 		if ((command == "yt") or (command == "youtube")) and len(args) > 0:
 			try:
@@ -60,6 +63,7 @@ class moduleClass(botModule):
 				for error in sys.exc_info():
 					print(str(error))
 				pass
+
 	def on_pubmsg(self, c, e):
 		links = re.findall(r'(https?://\S+)', e.arguments[0])
 		
@@ -67,21 +71,23 @@ class moduleClass(botModule):
 			for link in links:
 				if ('youtube' in link) or ('youtu.be' in link):
 					videoId = video_id(link)
-					g_api_key = self.settings["apikey"]
-					s = requests.Session()
-					search = s.get("https://www.googleapis.com/youtube/v3/videos",
-						params={
-							"part": "snippet,contentDetails,statistics",
-							"key": g_api_key,
-							"id": videoId
-						})
-					results = search.json()
-					video_title = results["items"][0]["snippet"]["title"]
-					channel_name = results["items"][0]["snippet"]["channelTitle"]
-					video_length = ''.join(results["items"][0]["contentDetails"]["duration"][2:])
-					video_views = results["items"][0]["statistics"]["viewCount"]
-					msg = video_title + ": by " + channel_name + ", (" + video_length.lower() + ") " + video_views + " views http://youtu.be/" + videoId
-					#msg = msg.encode('ascii', 'ignore')
-					self.send(e.target, msg)
+					if self.lastid != videoId:
+						g_api_key = self.settings["apikey"]
+						s = requests.Session()
+						search = s.get("https://www.googleapis.com/youtube/v3/videos",
+							params={
+								"part": "snippet,contentDetails,statistics",
+								"key": g_api_key,
+								"id": videoId
+							})
+						results = search.json()
+						video_title = results["items"][0]["snippet"]["title"]
+						channel_name = results["items"][0]["snippet"]["channelTitle"]
+						video_length = ''.join(results["items"][0]["contentDetails"]["duration"][2:])
+						video_views = results["items"][0]["statistics"]["viewCount"]
+						msg = video_title + ": by " + channel_name + ", (" + video_length.lower() + ") " + video_views + " views http://youtu.be/" + videoId
+						#msg = msg.encode('ascii', 'ignore')
+						self.send(e.target, msg)
+						self.lastid = videoId
 		except:
 			pass

@@ -4,14 +4,18 @@ import requests
 #Google module
 #self.send(e.target, msg)
 class moduleClass(botModule):
-	def on_start(self):
+	def on_start(self, c, e):
 		pass
+
 	def on_pubmsg(self, c, e):
 		pass
+
 	def on_send(self, chan, msg, modulename):
 		pass
+
 	def on_event(self, c, e):
 		pass
+
 	def do_command(self, c, e, command, args, admin):
 		if ((command == "g") or (command == "google")) and len(args) > 0:
 			try:
@@ -36,5 +40,9 @@ class moduleClass(botModule):
 				for error in sys.exc_info():
 					print(str(error))
 				pass
+
 	def on_privmsg(self, c, e):
+		pass
+
+	def on_shutdown(self):
 		pass

@@ -19,7 +19,7 @@ class bcolors:
 	ENDC = '\x0f'
 
 class moduleClass(botModule):
-	def on_start(self):
+	def on_start(self, c, e):
 		self.channels = []
 		self.last_update = 0
 		self.lastsentence = {}
@@ -39,7 +39,6 @@ class moduleClass(botModule):
 			print("couldn't initiate twitter feed")
 			for error in sys.exc_info():
 				print(str(error))
-
 
 	def check_twitter(self):
 		try:
@@ -100,6 +99,7 @@ class moduleClass(botModule):
 
 	def on_pubmsg(self, c, e):
 		pass
+
 	def on_send(self, chan, msg, modulename):
 		if modulename != "twittertools":
 			self.lastsentence[chan]=msg
@@ -114,12 +114,14 @@ class moduleClass(botModule):
 				print(str(error))
 			print("Error tweeting")
 			raise
+
 	def on_event(self, c, e):
 		if e.source.split("!")[0]==c.nickname:
 			if e.type=="join":
 				self.channels.append(e.target)
 			elif e.type=="part":
 				self.channels.remove(e.target)
+
 	def do_command(self, c, e, command, args, admin):
 		msg = ""
 		if ((command == "tweet") and admin):
@@ -150,5 +152,6 @@ class moduleClass(botModule):
 							print(str(error))
 						msg = "Error tweeting"
 			self.send(e.target, msg)
+
 	def on_privmsg(self, c, e):
 		pass
