@@ -1,22 +1,14 @@
 from jambot import botModule
-import sqlite3
-
 
 # Quote module
 class moduleClass(botModule):
     def on_start(self):
-        self.conn = sqlite3.connect(self.settings["database"])
-        self.cql = self.conn.cursor()
         self.buffernick = 'wew'
         self.buffermsg = 'wew'
-        self.cql.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='quotes'")
-        result = self.cql.fetchone()
-        if result:
-            pass
-        else:
-            self.cql.execute("CREATE TABLE quotes (nick text, quote text)")
 
-    pass
+	def on_load_db(self):
+		self.db_query("CREATE TABLE IF NOT EXISTS quotes (nick text, quote text)")
+		self.db_commit()
 
     def on_pubmsg(self, c, e):
         self.buffernick = e.source.nick
@@ -40,17 +32,16 @@ class moduleClass(botModule):
                 self.send(e.target, "No quote stored")
             else:
                 quote = (self.buffernick, self.buffermsg)
-                self.cql.execute("INSERT INTO quotes VALUES (?,?)", quote)
-                self.conn.commit()
+                self.db_query("INSERT INTO quotes VALUES (?,?)", quote)
+                self.db_commit()
                 msg = "Added quote: " + quote[0] + ": " + quote[1]
                 self.send(e.target, msg)
 
         elif ((command == "q") or (command == "quote")):
-            self.cql.execute('SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1')
-            msg = self.cql.fetchone()
-            msg = "Quote: " + msg[0] + ": " + msg[1]
+			query = self.db_query('SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1')[0]
+            msg = "Quote: " + query[0] + ": " + query[1]
             self.send(e.target, msg)
         pass
 
     def shutdown(self):
-        self.conn.close()
+		pass
