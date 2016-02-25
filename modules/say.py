@@ -13,8 +13,7 @@ class moduleClass(botModule):
         pass
 
     def on_send(self, chan, msg, modulename):
-        self.buffernick = "jambot"
-        self.buffermsg = msg
+        pass
 
     def on_event(self, c, e):
         pass
