@@ -15,6 +15,7 @@ def mangle_line(line):
 	line = ' '.join(w for w in line.split() if w not in links)
 	line = ' '.join(w for w in line.split() if w[0] not in "[\"(")
 	line = ' '.join(w for w in line.split() if w[-1] not in "\;%")
+	line = ' '.join(w for w in line.split() if not len(w)>26)
 	line = ''.join(c for c in line if c in f)
 	return line
 
@@ -24,7 +25,7 @@ class moduleClass(botModule):
 		self.replyrate = int(self.settings["replyrate"])
 		self.learning = False
 		self.cooldown = int(self.settings["cooldown"])
-		self.lastmsg = time.time()
+		self.lastmsg = 0
 		self.maxchain = int(self.settings["maxchain"])
 		if self.settings["learning"]=="True":
 			self.learning = True
@@ -36,24 +37,34 @@ class moduleClass(botModule):
 
 	def on_pubmsg(self, c, e):
 		chan = e.target
-		msg = e.arguments[0]
+		msg = mangle_line(e.arguments[0])
 		own_nick = c.nickname
 		phrase = ""
-		if self.learning:
-			msg = mangle_line(msg)
+		lametrig = (len(msg.split())==2 and msg.split()[0]==own_nick)
+		if self.learning and not lametrig:
 			words = msg.split()
 			for word1, word2 in zip(words[:-1], words[1:]):
+				if word1.lower()==own_nick.lower():
+					word1="#nick"
+				if word2.lower()==own_nick.lower():
+					word2="#nick"
 				self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
 				self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
 			if len(words)!=0:
+				if words[-1].lower()==own_nick.lower():
+					words[-1]="#nick"
 				self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
 				self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
 			self.db_commit()
-		if (((self.replyrate>random.randint(1,99)) or ((self.nickreplyrate>random.randint(1,99)) and (own_nick.lower() in msg.lower()))) and (time.time()>self.lastmsg+self.cooldown)):
+		roll = self.replyrate>random.randint(1,99)
+		nickroll = self.nickreplyrate>random.randint(1,99)
+		named = own_nick.lower() in msg.lower().split()
+		cooled = time.time()>(self.lastmsg+self.cooldown)
+		if (roll or (nickroll and named)) and cooled:
 			chainlength = 0
 			exist_words = []
 			for word in self.db_query("SELECT word1, word2 FROM contexts WHERE instr(LOWER(?), LOWER(word1)) > 0", [msg]):
-				if word[0].lower() in msg.lower().split():
+				if (word[0].lower() in msg.lower().split()) and (word[0].lower()!=own_nick.lower()) :
 					exist_words.append(word)
 			if exist_words:
 				currentword = exist_words[random.randint(0,len(exist_words)-1)][0]
@@ -63,14 +74,19 @@ class moduleClass(botModule):
 					total_contexts = 0
 					for word in next_words:
 						total_contexts += int(word[2])
-					selection = random.randint(0, random.randint(0, int(total_contexts)))
+					if total_contexts != 0:
+						selection = random.randint(1, random.randint(1, total_contexts))
+					else:
+						selection = 0
 					newword = None
 					for word in next_words:
 						selection -= int(word[2])
-						if selection < 0 and newword == None:
+						if selection < 1 and newword == None:
 							if word[1] != "":
 								newword = word[1]
 					if newword != currentword:
+						if currentword=="#nick":
+							currentword=e.source.nick
 						phrase += currentword + " "
 						chainlength += 1
 					if chainlength > self.maxchain:
@@ -89,7 +105,7 @@ class moduleClass(botModule):
 		pass
 
 	def do_command(self, c, e, command, args, admin):
-		if command=="feed" and admin and len(args)>0:
+		if command=="feed" and admin and args:
 			print("Downloading: " + args[0])
 			self.send(e.target, "Downloading: " + args[0])
 			textbytes = BytesIO()
@@ -122,6 +138,21 @@ class moduleClass(botModule):
 				print("Commited to DB")
 			except:
 				self.send(e.target, "Couldn't download file.")
+		elif command=="words":
+			words = self.db_query("SELECT COUNT(word1) FROM (SELECT DISTINCT word1 FROM contexts)")[0][0]
+			contexts = self.db_query("SELECT sum(freq) FROM contexts")[0][0]
+			self.send(e.target, "Currently have " + str(words) + " and " + str(contexts)  + " contexts.")
+		elif command=="known" and args:
+			for word in args[:8]:
+				contexts = contexts = self.db_query("SELECT sum(freq) FROM contexts WHERE word1=?", (word, ))[0][0]
+				if contexts != None:
+					self.send(e.target, "I know " + word + " in " + str(contexts)  + " contexts.")
+				else:
+					self.send(e.target, "I don't know " + word)
+		
+		
+		
+
 
 
 	def on_privmsg(self, c, e):
