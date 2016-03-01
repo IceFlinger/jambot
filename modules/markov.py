@@ -72,7 +72,7 @@ class moduleClass(botModule):
 					currentword = newword
 				print("")
 		except:
-			raise
+			pass
 		if phrase != "":
 			self.send(e.target, phrase)
 			self.lastmsg = time.time()
@@ -85,28 +85,31 @@ class moduleClass(botModule):
 			try:
 				words = msg.split()
 				for word1, word2 in zip(words[:-1], words[1:]):
-					if word1.lower()==own_nick.lower(): #Replace own name with target's name in reply (thanks pyborg)
+					if word1.lower() in own_nick.lower(): #Replace own name with target's name in reply (thanks pyborg)
 						word1="#nick"
-					if word2.lower()==own_nick.lower():
+					if word2.lower() in own_nick.lower():
 						word2="#nick"
 					self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
 					self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
+					self.db_commit()
 				if len(words)!=0:
-					if words[-1].lower()==own_nick.lower():
+					if words[-1].lower() in own_nick.lower():
 						words[-1]="#nick"
 					self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
 					self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
-				self.db_commit()
+					self.db_commit()
 			except:
-				raise
+				pass
 		roll = self.replyrate>random.randint(1,99)
 		nickroll = self.nickreplyrate>random.randint(1,99)
-		named = own_nick.lower() in msg.lower().split()
-		cooled = time.time()>(self.lastmsg+self.cooldown)-1
+		named = own_nick.lower() in msg.lower()
+		cooled = time.time()>(self.lastmsg+self.cooldown)
 		if (roll or (nickroll and named)) and cooled:
-			t = threading.Thread(target=self.build_sentence, args=(c, e, msg))
-			t.daemon = True
-			t.start()
+			#t = threading.Thread(target=self.build_sentence, args=(c, e, msg))
+			#t.daemon = True
+			#t.start()
+			self.build_sentence(c, e, msg)
+			self.lastmsg = time.time()
 
 	def on_send(self, chan, msg, modulename):
 		pass
@@ -139,19 +142,19 @@ class moduleClass(botModule):
 						for word1, word2 in zip(words[:-1], words[1:]):
 							self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
 							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2=?", (multi, word1, word2))
+							self.db_commit()
 						if len(words)!=0:
 							self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
 							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2 is ''", (multi, words[-1]))
+							self.db_commit()
 						linecount += 1
 						if ((linecount%1000)==0):
 							print(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
 				except:
 					self.send(e.target, "Interrupted while learning from file (Something else accessing DB?)")
 				try:
-					self.db_commit()
 					print("Learned from " + str(linecount) + " lines")
 					self.send(e.target, "Learned from " + str(linecount) + " lines")
-					print("Commited to DB")
 				except:
 					pass
 			except:
