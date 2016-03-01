@@ -45,7 +45,7 @@ class moduleClass(botModule):
 			timeline = t.statuses.home_timeline()
 			tweets = []
 			for tweet in timeline:
-				if (int(tweet['id']) == self.last_update) or (tweet['user']['screen_name'] == self.settings["account_name"]):
+				if (int(tweet['id']) == self.last_update) or (tweet['user']['screen_name'].lower() == self.settings["account_name"].lower()):
 					break
 				tweet_name = tweet['user']['name']
 				tweet_handle = tweet['user']['screen_name']

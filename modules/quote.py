@@ -16,7 +16,7 @@ class moduleClass(botModule):
 		self.buffermsg = e.arguments[0]
 
 	def on_send(self, chan, msg, modulename):
-		self.buffernick = "jambot"
+		self.buffernick = self.bot.nickname
 		self.buffermsg = msg
 
 	def on_event(self, c, e):
