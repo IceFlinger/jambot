@@ -6,7 +6,6 @@ from twitter import *
 import time
 import random
 #Twittertools module
-#self.send(e.target, msg)
 
 class bcolors:
 	TIME = '\x0310'
@@ -104,7 +103,7 @@ class moduleClass(botModule):
 		if modulename != "twittertools":
 			self.lastsentence[chan]=msg
 		try:
-			if ((len(msg.split()) >= int(self.settings["tweet_length"])) and (time.time() > self.tweettimer) and (self.settings["auto_tweeting"] == "True") and (self.settings["tweeting"] == "True") and (e.target in self.settings["tweet_modules"].split())):
+			if ((len(msg.split()) >= int(self.settings["tweet_length"])) and (time.time() > self.tweettimer) and (self.settings["auto_tweeting"] == "True") and (self.settings["tweeting"] == "True") and (modulename in self.settings["tweet_modules"].split())):
 				t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
 				t.statuses.update(status=msg)
 				self.send(chan, "*")
