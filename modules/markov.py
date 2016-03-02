@@ -6,6 +6,7 @@ import re
 import time
 import string
 import threading
+import math
 from io import BytesIO
 #Markov chain jambot module
 #By ice at irc.kickinrad.tv
@@ -25,11 +26,14 @@ class moduleClass(botModule):
 	def on_start(self, c, e):
 		self.replyrate = int(self.settings["replyrate"])
 		self.learning = False
+		self.rarewords = False
 		self.cooldown = int(self.settings["cooldown"])
 		self.lastmsg = 0
 		self.maxchain = int(self.settings["maxchain"])
 		if self.settings["learning"]=="True":
 			self.learning = True
+		if self.settings["rarewords"]=="True":
+			self.rarewords = True
 		self.nickreplyrate = int(self.settings["nickreplyrate"])
 
 	def on_load_db(self):
@@ -41,11 +45,12 @@ class moduleClass(botModule):
 		try:
 			chainlength = 0
 			exist_words = []
-			for word in self.db_query("SELECT word1, word2 FROM contexts WHERE instr(LOWER(?), LOWER(word1)) > 0", [msg]):
-				if (word[0].lower() in msg.lower().split()) and (word[0].lower()!=c.nickname.lower()) :
+			for word in self.db_query("SELECT word1 FROM contexts WHERE instr(LOWER(?), LOWER(word1)) > 0 GROUP BY lower(word1) ORDER BY sum(freq) ", [msg]):
+				if (word[0].lower() in msg.lower().split()) and (word[0].lower()!=c.nickname.lower()):
 					exist_words.append(word)
 			if exist_words:
-				currentword = exist_words[random.randint(0,len(exist_words)-1)][0]
+				roll = random.randint(1,int(math.ceil(len(exist_words)/2)))
+				currentword = exist_words[roll-1][0]
 				while currentword != None:
 					print(currentword, end=" ",flush=True)
 					next_words = self.db_query("SELECT * FROM contexts WHERE LOWER(word1) LIKE LOWER(?) ORDER BY freq ASC", [currentword])
@@ -53,7 +58,10 @@ class moduleClass(botModule):
 					for word in next_words:
 						total_contexts += int(word[2])
 					if total_contexts != 0:
-						selection = random.randint(1, random.randint(1, total_contexts))
+						if self.rarewords:
+							selection = random.randint(1, random.randint(1, total_contexts))
+						else:
+							selection = random.randint(1, total_contexts)
 					else:
 						selection = 0
 					newword = None
@@ -72,7 +80,7 @@ class moduleClass(botModule):
 					currentword = newword
 				print("")
 		except:
-			pass
+			raise
 		if phrase != "":
 			self.send(e.target, phrase)
 			self.lastmsg = time.time()
@@ -141,12 +149,10 @@ class moduleClass(botModule):
 						words = line.split()
 						for word1, word2 in zip(words[:-1], words[1:]):
 							self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
-							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2=?", (multi, word1, word2))
-							self.db_commit()
+							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2=?", (multi, word1, word2))	
 						if len(words)!=0:
 							self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
 							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2 is ''", (multi, words[-1]))
-							self.db_commit()
 						linecount += 1
 						if ((linecount%1000)==0):
 							print(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
@@ -155,6 +161,8 @@ class moduleClass(botModule):
 				try:
 					print("Learned from " + str(linecount) + " lines")
 					self.send(e.target, "Learned from " + str(linecount) + " lines")
+					self.db_commit()
+					print("Commited to DB")
 				except:
 					pass
 			except:
