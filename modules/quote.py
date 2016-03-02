@@ -30,7 +30,7 @@ class moduleClass(botModule):
                 self.send(e.target, "No quote stored")
                 return
 
-            if self.buffer[args[0]] == '!quote':
+            if self.buffer.get(args[0]) == '!quote':
                 self.send(e.target, "No quote stored")
             else:
                 quote = (args[0], self.buffer.get(args[0]))
