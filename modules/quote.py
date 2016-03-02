@@ -40,7 +40,7 @@ class moduleClass(botModule):
                 self.send(e.target, msg)
                 pass
 
-        elif (command == "debug"):
+        elif (command == "debug" and admin):
                 print(self.buffer)
 
         elif ((command == "q") or (command == "quote")):
