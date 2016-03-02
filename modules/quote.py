@@ -5,6 +5,9 @@ from jambot import botModule
 class moduleClass(botModule):
     dbload = True
 
+    def help(self):
+        self.send(e.target, self.nickname + "help: !quote provides quote functionality.")
+
     def on_start(self, c, e):
         self.buffer = dict()
 
