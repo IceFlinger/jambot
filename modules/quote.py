@@ -19,8 +19,8 @@ class moduleClass(botModule):
         self.buffer.update({e.source.nick:e.arguments[0]})
 
     def on_send(self, chan, msg, modulename):
-        isquote = msg.split(' ', 2)
-        if isquote[0] == "Quote:" or isquote[1] == "quote:" or isquote[1] == "quote":
+        print(modulename)
+        if modulename == 'quote':
             return
         else:
             self.buffer.update({self.bot.nickname:msg})
