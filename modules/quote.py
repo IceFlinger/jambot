@@ -5,6 +5,9 @@ from jambot import botModule
 class moduleClass(botModule):
     dbload = True
 
+    def help(self):
+        self.send(e.target, self.nickname + "help: !quote provides quote functionality.")
+
     def on_start(self, c, e):
         self.buffer = dict()
 
@@ -16,7 +19,11 @@ class moduleClass(botModule):
         self.buffer.update({e.source.nick:e.arguments[0]})
 
     def on_send(self, chan, msg, modulename):
-        self.buffer.update({self.bot.nickname:msg})
+        print(modulename)
+        if modulename == 'quote':
+            return
+        else:
+            self.buffer.update({self.bot.nickname:msg})
 
     def on_event(self, c, e):
         if (e.type == "action"):
@@ -33,6 +40,11 @@ class moduleClass(botModule):
             if self.buffer.get(args[0]) == '!quote':
                 self.send(e.target, "No quote stored")
             else:
+                if args[0] == self.bot.nickname:
+                    isquote = self.buffer.get(args[0]).split(' ', 2)
+                    if isquote[0] == "Quote":
+                        self.send(e.target, "No quote stored")
+
                 quote = (args[0], self.buffer.get(args[0]))
                 self.db_query("INSERT INTO quotes VALUES (?,?)", quote)
                 self.db_commit()
