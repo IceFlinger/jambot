@@ -54,7 +54,7 @@ class moduleClass(botModule):
 						if len(words)!=0:
 							self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
 							self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
-						self.db_commit()
+				self.db_commit()
 				return newmin
 		except:
 			for error in sys.exc_info():
