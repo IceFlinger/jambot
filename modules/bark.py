@@ -20,7 +20,7 @@ class moduleClass(botModule):
 
     def do_command(self, c, e, command, args, admin):
         if (command == "bark"):
-            self.send(e.target, "bark")
+            self.send(e.target, "bark bark")
 
     def shutdown(self):
         pass
