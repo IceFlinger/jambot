@@ -37,7 +37,7 @@ class moduleClass(botModule):
 		self.nickreplyrate = int(self.settings["nickreplyrate"])
 
 	def on_load_db(self):
-		self.db_query("CREATE TABLE IF NOT EXISTS contexts (word1 text, word2 text DEFAULT '', freq int DEFAULT 0, UNIQUE(word1, word2))")
+		self.db_query("CREATE TABLE IF NOT EXISTS contexts (word1 text DEFAULT '', word2 text DEFAULT '', freq int DEFAULT 0, UNIQUE(word1, word2))")
 		self.db_commit()
 
 	def build_sentence(self, c, e, msg):
@@ -50,7 +50,38 @@ class moduleClass(botModule):
 					exist_words.append(word)
 			if exist_words:
 				roll = random.randint(1,int(math.ceil(len(exist_words)/2)))
-				currentword = exist_words[roll-1][0]
+				seedword = exist_words[roll-1][0].lower()
+				currentword = seedword
+				while currentword != None:
+					next_words = self.db_query("SELECT * FROM contexts WHERE LOWER(word2) LIKE LOWER(?) ORDER BY freq ASC", [currentword])
+					total_contexts = 0
+					for word in next_words:
+						total_contexts += int(word[2])
+					if total_contexts != 0:
+						if self.rarewords:
+							selection = random.randint(1, random.randint(1, total_contexts))
+						else:
+							selection = random.randint(1, total_contexts)
+					else:
+						selection = 0
+					newword = None
+					for word in next_words:
+						selection -= int(word[2])
+						if selection < 1 and newword == None:
+							if word[0] != "":
+								newword = word[0]
+					if newword != currentword:
+						if currentword=="#nick":
+							currentword=e.source.nick
+						if chainlength != 0:
+							phrase = currentword + " " + phrase
+						chainlength += 1
+					if chainlength > self.maxchain/2:
+						newword = None
+					currentword = newword
+				print(phrase, end=" ",flush=True)
+				currentword = seedword
+				chainlength = 0
 				while currentword != None:
 					print(currentword, end=" ",flush=True)
 					next_words = self.db_query("SELECT * FROM contexts WHERE LOWER(word1) LIKE LOWER(?) ORDER BY freq ASC", [currentword])
@@ -75,7 +106,7 @@ class moduleClass(botModule):
 							currentword=e.source.nick
 						phrase += currentword + " "
 						chainlength += 1
-					if chainlength > self.maxchain:
+					if chainlength > self.maxchain/2:
 						newword = None
 					currentword = newword
 				print("")
@@ -92,6 +123,12 @@ class moduleClass(botModule):
 		if self.learning and not lametrig:
 			try:
 				words = msg.split()
+				if len(words)!=0:
+					if words[0].lower() in own_nick.lower():
+						words[0]="#nick"
+					self.db_query("INSERT OR IGNORE INTO contexts (word2) VALUES (?)", (words[0], ))
+					self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word2=? AND word1 is ''", (words[-1], ))
+					self.db_commit()
 				for word1, word2 in zip(words[:-1], words[1:]):
 					if word1.lower() in own_nick.lower(): #Replace own name with target's name in reply (thanks pyborg)
 						word1="#nick"
@@ -108,8 +145,8 @@ class moduleClass(botModule):
 					self.db_commit()
 			except:
 				pass
-		roll = self.replyrate>random.randint(1,99)
-		nickroll = self.nickreplyrate>random.randint(1,99)
+		roll = self.replyrate>random.randint(0,99)
+		nickroll = self.nickreplyrate>random.randint(0,99)
 		named = own_nick.lower() in msg.lower()
 		cooled = time.time()>(self.lastmsg+self.cooldown)
 		if (roll or (nickroll and named)) and cooled:
@@ -147,6 +184,9 @@ class moduleClass(botModule):
 					for line in text:
 						line = mangle_line(line)
 						words = line.split()
+						if len(words)!=0:
+							self.db_query("INSERT OR IGNORE INTO contexts (word2) VALUES (?)", (words[0], ))
+							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word2=? AND word1 is ''", (multi, words[0]))
 						for word1, word2 in zip(words[:-1], words[1:]):
 							self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
 							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2=?", (multi, word1, word2))	
