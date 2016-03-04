@@ -20,7 +20,7 @@ class moduleClass(botModule):
 
     def on_send(self, chan, msg, modulename):
         print(modulename)
-        if modulename == 'quote':
+        if modulename != 'markov' and modulename != 'say':
             return
         else:
             self.buffer.update({self.bot.nickname:msg})
