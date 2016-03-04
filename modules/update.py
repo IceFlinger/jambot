@@ -15,7 +15,7 @@ class moduleClass(botModule):
         update_notified = 0
         while True:
             commits = repo.iter_commits('master..origin/master')
-            count = sum(1 for c in commits)
+            count = sum(1 for commit in commits)
             if update_notified != 1:
                 print("git check")
                 if count >= 1:
