@@ -17,12 +17,21 @@ def mangle_line(line):
 	line = ' '.join(w for w in line.split() if w not in links) #Remove URLs
 	line = ' '.join(w for w in line.split() if w[0] not in "[\"(") #Remove timestamp type stuff and quotes
 	line = ' '.join(w for w in line.split() if w[-1] not in "\;\"%") #Remove broken words
+	line = ' '.join(w for w in line.split() if w[-1]!=">" and w[0]!="<") #Remove broken words
 	line = ' '.join(w for w in line.split() if not len(w)>26) #Remove long stuff
 	line = ''.join(c for c in line if c in f) #Filter whole string with f chars
 	return line
 
 class moduleClass(botModule):
 	dbload = True
+
+	def help(command):
+		if (command == "words"):
+			return "shows a count of words known by markov module"
+		elif (command == "known"):
+			return "usage: known <word> ; shows number of known contexts for specific word"
+		return ""
+
 	def on_start(self, c, e):
 		self.replyrate = int(self.settings["replyrate"])
 		self.learning = False
@@ -218,7 +227,7 @@ class moduleClass(botModule):
 					self.send(e.target, "I know " + word + " in " + str(contexts)  + " contexts.")
 				else:
 					self.send(e.target, "I don't know " + word)
-		elif command=="clean":
+		elif command=="clean" and admin:
 			contexts = self.db_query("SELECT sum(freq) FROM contexts")[0][0]
 			self.send(e.target, "Used to have " + str(contexts)  + " contexts.")
 			self.db_query("UPDATE contexts SET freq = cast((freq+1)/2 as int)")

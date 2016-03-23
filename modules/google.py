@@ -3,6 +3,11 @@ import sys
 import requests
 #Google module
 class moduleClass(botModule):
+	def help(command):
+		if (command == "g") or (command == "google"):
+			return "searches google and returns the top result for the query"
+		return ""
+
 	def on_start(self, c, e):
 		pass
 
