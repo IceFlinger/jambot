@@ -40,6 +40,7 @@ class moduleClass(botModule):
 					params={
 						"part": "snippet",
 						"key": g_api_key,
+						"type": "video",
 						"q": query
 					})
 				results = search.json()
