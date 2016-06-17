@@ -126,9 +126,9 @@ class botMain(irc.bot.SingleServerIRCBot):
 			module.on_start(c, e)
 
 	def send_msg(self, chan, msg, modulename):
-		self.c.privmsg(chan, msg)
+		self.c.privmsg(chan, "butts")
 		for module in self.modules:
-			module.on_send(chan, msg, modulename)
+			module.on_send(chan, "butts", modulename)
 
 	def database_query(self, statement, params):
 		cursor = self.db.cursor()
