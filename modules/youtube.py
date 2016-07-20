@@ -28,6 +28,9 @@ def video_id(value):
 class moduleClass(botModule):
 	def on_start(self, c, e):
 		self.lastid = ""
+		self.titlefetch = False
+		if self.settings["titlefetch"] == "True":
+			self.titlefetch = True
 
 	def do_command(self, c, e, command, args, admin):
 		if ((command == "yt") or (command == "youtube")) and len(args) > 0:
@@ -40,6 +43,7 @@ class moduleClass(botModule):
 					params={
 						"part": "snippet",
 						"key": g_api_key,
+						"type": "video",
 						"q": query
 					})
 				results = search.json()
@@ -69,7 +73,7 @@ class moduleClass(botModule):
 		
 		try:
 			for link in links:
-				if ('youtube' in link) or ('youtu.be' in link):
+				if (('youtube' in link) or ('youtu.be' in link)) and self.titlefetch:
 					videoId = video_id(link)
 					if self.lastid != videoId:
 						g_api_key = self.settings["apikey"]
