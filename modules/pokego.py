@@ -2,8 +2,10 @@ from jambot import botModule
 import sys
 import requests
 import time
+import math
 from geopy.distance import vincenty
 import threading
+import cfscrape
 
 pokedex = {
 '1': 'Bulbasaur', '2': 'Ivysaur', '3': 'Venusaur', '4': 'Charmander', 
@@ -48,56 +50,114 @@ class moduleClass(botModule):
 	def on_start(self, c, e):
 		self.checktimer = int(self.settings["check_timer"])
 		self.shitmons = self.settings["shitmons"].split()
-		self.alert_chans = self.settings["alert_chans"].split()
+		self.alert_chan = self.settings["alert_chan"]
 		self.lat = self.settings["lat"]
 		self.lon = self.settings["lon"]
+		self.session = cfscrape.create_scraper()
 		self.last_scan = []
 		if self.checktimer > 0:
 			self.search_schedule(self.checktimer)
 
-	def search_pokemon(self, manual = False):
+	def sec2min(self, secs):
+		mins = math.floor(secs/60)
+		secs = str(math.floor(secs-(60*mins)))
+		if len(secs) == 1:
+			secs = "0" + secs
+		return str(mins) + ":" + secs
+
+	def search_pokemon(self, manual = False, chan = ""):
+		pokelist = []
+		alert = ""
 		if manual:
 			print("Manually scanning " + self.lat + "/" + self.lon + " at " + str(time.time()))
 		else:
 			print("Auto scanning " + self.lat + "/" + self.lon + " at " + str(time.time()))
+			chan = self.alert_chan
 		try:
-			scan = requests.get("https://pokevision.com/map/scan/" + self.lat + "/" + self.lon)
-			data = requests.get("https://pokevision.com/map/data/" + self.lat + "/" + self.lon).json()
-			pokelist = []
-			alerts = []
+			scan = self.session.get("https://pokevision.com/map/scan/" + self.lat + "/" + self.lon)
+			datar = self.session.get("https://pokevision.com/map/data/" + self.lat + "/" + self.lon)
+			data = datar.json()
 			if data["status"] == "success":
 				pokelist = data["pokemon"]
-				self.last_scan = pokelist
+				self.last_scan = []
 			else:
-				alerts.append("Couldn't retrieve map data")
+				alert = "Couldn't retrieve map data"
 			index = 0
 			for pokemon in pokelist:
-				if not pokemon["pokemonId"] in self.shitmons:
+				if not str(pokemon["pokemonId"]) in self.shitmons:
+					self.last_scan.append(pokemon)
 					anchor = (float(self.lat), float(self.lon))
 					spotted = (pokemon["latitude"], pokemon["longitude"])
 					distance = vincenty(anchor, spotted).meters
-					msg = "{" + str(index) + "} Found " + pokedex[pokemon["pokemonId"]] + " with " + str(int(pokemon["expiration_time"]-time.time())) + " seconds left, " + str(int(distance)) + " meters away"
+					msg = "{" + str(index) + "} " + pokedex[str(pokemon["pokemonId"])] + " " + self.sec2min(int(pokemon["expiration_time"])- time.time()) + " " + str(int(distance)) + "m | "
 					index += 1
-					alerts.append(msg)
+					alert += msg
 			if index == 0 and manual:
-				alerts.append("Nothing found")
-			for chan in self.alert_chans:
-				for alert in alerts:
-					self.send(chan, alert)
+				alert= "Nothing found (" + str(len(pokelist)) + " ignored)"
 		except:
 			for error in sys.exc_info():
 				print(str(error))
+		if manual and alert == "":
+			alert= "Site possibly under maintenence"
+		while len(alert) > 383:
+			self.send(chan, alert[:383])
+			alert = alert[384:]
+		self.send(chan, alert)
+
 
 	def do_command(self, c, e, command, args, admin):
 		if command == "scan":
-			self.search_pokemon(True)
+			self.search_pokemon(True, e.target)
 		elif command == "locate" and args:
 			try:
 				self.send(e.target, ("https://google.ca/maps/place/" + str(self.last_scan[int(args[0])]["latitude"]) + "," + str(self.last_scan[int(args[0])]["longitude"])))
 			except:
 				self.send(e.target, "Incorrect index for last scan")
+		elif command == "anchor" and args:
+			try:
+				newlat = float(args[0])
+				newlon = float(args[1])
+				self.lat = str(newlat)
+				self.lon = str(newlon)
+				self.send(e.target, "Set new anchor point to:")
+				self.send(e.target, ("https://google.ca/maps/place/" + self.lat + "," + self.lon))
+			except:
+				q = "https://pokevision.com/map/lookup/" + "%20".join(args)
+				try:
+					lookupr = self.session.get(q)
+					lookup = lookupr.json()
+					if lookup["status"] == "success":
+						self.lat = str(lookup["latitude"])
+						self.lon = str(lookup["longitude"])
+						self.send(e.target, "Set new anchor point to:")
+						self.send(e.target, ("https://google.ca/maps/place/" + self.lat + "," + self.lon))
+					elif lookup["status"] == "error":
+						self.send(e.target, lookup["message"])
+					else:
+						self.send(e.target, "Something went wrong retrieving map data")
+				except:
+					for error in sys.exc_info():
+						print(str(error))
+					self.send(e.target, "Something went wrong retrieving map data")
 		elif command == "anchor":
 			self.send(e.target, ("https://google.ca/maps/place/" + self.lat + "," + self.lon))
+		elif command == "shitmons" and args:
+			try:
+				selected = []
+				invdex = {v: k for k, v in pokedex.items()} #magically invert pokedex dict to lookup names
+				for arg in args:
+					selected.append(invdex[arg])
+				for mon in selected:
+					if mon in self.shitmons:
+						self.shitmons.remove(mon)
+					else:
+						self.shitmons.append(mon)
+				shitmons = ""
+				for shitmon in self.shitmons:
+					shitmons += pokedex[shitmon] + " "
+				self.send(e.target, "Now ignoring: " + shitmons)
+			except:
+				self.send(e.target, "Couldn't recognize some pokemon")
 		elif command == "shitmons":
 			shitmons = ""
 			for shitmon in self.shitmons:
