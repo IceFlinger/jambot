@@ -12,7 +12,7 @@ import sys
 # by ice at irc.kickinrad.tv
 
 config_file = "jambot.cfg"
-debug = True
+debug = False
 
 class botModule():
 	dbload = False
