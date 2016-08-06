@@ -7,6 +7,10 @@ from geopy.distance import vincenty
 import threading
 import cfscrape
 
+#Broken as of sometime near the beginning of August, 2016
+#Keeping around for useful examples for other modules or if i ever feel like fixing
+#Not sure if I want to bother converting to new config style
+
 pokedex = {
 '1': 'Bulbasaur', '2': 'Ivysaur', '3': 'Venusaur', '4': 'Charmander', 
 '5': 'Charmeleon', '6': 'Charizard', '7': 'Squirtle', '8': 'Wartortle', 

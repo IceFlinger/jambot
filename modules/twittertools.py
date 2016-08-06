@@ -18,20 +18,30 @@ class bcolors:
 	ENDC = '\x0f'
 
 class moduleClass(botModule):
+	def init_settings(self):
+		self.set("consumer_key", "", True)
+		self.set("consumer_secret", "", True)
+		self.set("access_token", "", True)
+		self.set("access_secret", "", True)
+		self.set("account_name", "IceFlinger")
+		self.set("news_chans", "#twitter")
+		self.set("tweeting", True)
+		self.set("auto_tweeting", False)
+		self.set("tweet_modules", "markov")
+		self.set("tweetdelay_lower", 900)
+		self.set("tweetdelay_upper", 2000)
+		self.set("tweet_length", 4)
+		self.set("check_timer", 60)
+
 	def on_start(self, c, e):
 		self.channels = []
 		self.last_update = 0
 		self.lastsentence = {}
 		self.tweettimer = time.time()
-		self.checktimer = int(self.settings["check_timer"])
-		self.consumer_key= self.settings["consumer_key"]
-		self.consumer_secret = self.settings["consumer_secret"]
-		self.access_token = self.settings["access_token"]
-		self.access_secret = self.settings["access_secret"]
-		if self.checktimer > 0:
-			self.twitter_schedule(self.checktimer)
+		if self.get("check_timer") > 0:
+			self.twitter_schedule(self.get("check_timer"))
 		try:
-			t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
+			t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
 			timeline = t.statuses.home_timeline()
 			self.last_update = timeline[0]['id']
 		except:
@@ -41,11 +51,11 @@ class moduleClass(botModule):
 
 	def check_twitter(self):
 		try:
-			t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
+			t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"), self.get("consumer_key"), self.get("consumer_secret")))
 			timeline = t.statuses.home_timeline()
 			tweets = []
 			for tweet in timeline:
-				if (int(tweet['id']) == self.last_update) or (tweet['user']['screen_name'].lower() == self.settings["account_name"].lower()):
+				if (int(tweet['id']) == self.last_update) or (tweet['user']['screen_name'].lower() == self.get("account_name").lower()):
 					break
 				tweet_name = tweet['user']['name']
 				tweet_handle = tweet['user']['screen_name']
@@ -77,7 +87,7 @@ class moduleClass(botModule):
 				tweet_string = bcolors.NAME + tweet_name + bcolors.HANDLE + " @" + tweet_handle + ": " + bcolors.MSG + tweet_text + " " + bcolors.EXTRAS + tweet_extras + bcolors.MSG + tweet_link + bcolors.ENDC
 				tweets.append(tweet_string)
 			for tweet in reversed(tweets):
-				for channel in self.channels:
+				for channel in self.get("news_chans").split():
 					self.send(channel, tweet)
 			self.last_update = int(timeline[0]['id'])
 		except TwitterHTTPError:
@@ -103,32 +113,28 @@ class moduleClass(botModule):
 		if modulename != "twittertools":
 			self.lastsentence[chan]=msg
 		try:
-			if ((len(msg.split()) >= int(self.settings["tweet_length"])) and (time.time() > self.tweettimer) and (self.settings["auto_tweeting"] == "True") and (self.settings["tweeting"] == "True") and (modulename in self.settings["tweet_modules"].split())):
-				t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
+			lencheck = (len(msg.split()) >= int(self.get("tweet_length")))
+			timecheck = (time.time() > self.tweettimer)
+			autocheck = (self.get("auto_tweeting"))
+			modcheck = (modulename in self.get("tweet_modules").split())
+			if (lencheck and timecheck and autocheck and modcheck):
+				t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
 				t.statuses.update(status=msg)
 				self.send(chan, "*")
-				self.tweettimer = time.time() + random.randint(int(self.settings["tweetdelay_lower"]), int(self.settings["tweetdelay_upper"]))
+				self.tweettimer = time.time() + random.randint(self.get("tweetdelay_lower"), self.get("tweetdelay_upper"))
 		except:
 			for error in sys.exc_info():
 				print(str(error))
 			print("Error tweeting")
-			raise
-
-	def on_event(self, c, e):
-		if e.source.split("!")[0]==c.nickname:
-			if e.type=="join":
-				self.channels.append(e.target)
-			elif e.type=="part":
-				self.channels.remove(e.target)
 
 	def do_command(self, c, e, command, args, admin):
 		msg = ""
 		if ((command == "tweet") and admin):
-			if self.settings["tweeting"] == "True":
+			if self.get("tweeting"):
 				if len(args) == 0:
 					try:
-						if ((self.lastsentence[e.target] != "") and (e.target in self.settings["tweet_modules"].split())):
-							t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
+						if ((self.lastsentence[e.target] != "") and (e.target in self.get("tweet_modules").split())):
+							t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
 							t.statuses.update(status=self.lastsentence[e.target])
 							msg = "Tweeted \"" + self.lastsentence[e.target] + "\""
 						else:
@@ -143,7 +149,8 @@ class moduleClass(botModule):
 					for word in args:
 							commandText += word + ' '
 					try:
-						t = Twitter(auth=OAuth(self.access_token, self.access_secret,self.consumer_key, self.consumer_secret))
+						t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
+						t.statuses.update(status=self.lastsentence[e.target])
 						t.statuses.update(status=commandText)
 						msg = "Tweeted \"" + commandText + "\""
 					except:

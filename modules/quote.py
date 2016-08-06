@@ -23,7 +23,7 @@ class moduleClass(botModule):
         if modulename != 'markov' and modulename != 'say':
             return
         else:
-            self.buffer.update({self.bot.nickname:msg})
+            self.buffer.update({self.bot.get("nickname"):msg})
 
     def on_event(self, c, e):
         if (e.type == "action"):

@@ -17,17 +17,20 @@ def mangle_line(line):
 	return line
 
 class moduleClass(botModule):
+	def init_settings(self):
+		self.set("check_timer", 300)
+		self.set("learning_boards", "vg")
+		self.set("thread_filter", "srg")
+
 	def on_start(self, c, e):
-		self.checktimer = int(self.settings["check_timer"])
 		self.learning_boards = []
-		if self.settings["learning_boards"].split() and "markov" in self.bot.modulenames:
-			for board in self.settings["learning_boards"].split():
-				self.learning_boards.append([board, 0])
-		elif self.settings["learning_boards"].split():
+		if self.get("learning_boards").split() and "markov" in self.bot.get("modules"):
+			for board in self.get("learning_boards").split():
+				self.learning_boards.append([board, 0]) #learning boards only load on init, changes to settings won't affect them
+		else:
 			print("You need to load the markov module to learn from 4chan boards.")
-		self.thread_filter = self.settings["thread_filter"]
-		if self.checktimer > 0:
-			self.learn_schedule(self.checktimer)
+		if self.get("check_timer") > 0:
+			self.learn_schedule(self.get("check_timer"))
 
 	def thread_learning(self, threadno, board, minpost = 0):
 		try:
@@ -39,21 +42,27 @@ class moduleClass(botModule):
 				for idx, val in enumerate(jason['posts']):
 					post = jason['posts'][idx]
 					if ('com' in post) and (post["no"] > minpost):
-						text = post['com']
-						text = text.replace('<br>', ' ')
-						regexstring = '<[^<]+?>|\&gt\;\&gt\;\d*|https?://[^ ]*'
-						text = re.sub(regexstring, '', text) 
-						text = html.parser.HTMLParser().unescape(text)
-						text = mangle_line(str(text))
+						newpost = post['com']
+						lines = newpost.split('<br>')
+						for text in lines:
+							regexstring = '<[^<]+?>|\&gt\;\&gt\;\d*|https?://[^ ]*'
+							text = re.sub(regexstring, '', text) 
+							text = html.parser.HTMLParser().unescape(text)
+							text = mangle_line(str(text))
+							words = text.split()
+							if len(words)!=0:
+								self.db_query("INSERT OR IGNORE INTO contexts (word2) VALUES (?)", (words[0], ))
+								self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word2=? AND word1 is ''", (words[-1], ))
+								self.db_commit()
+							for word1, word2 in zip(words[:-1], words[1:]):
+								self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
+								self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
+								self.db_commit()
+							if len(words)!=0:
+								self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
+								self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
 						if post["no"] > newmin:
-							newmin = post["no"]
-						words = text.split()
-						for word1, word2 in zip(words[:-1], words[1:]):
-							self.db_query("INSERT OR IGNORE INTO contexts (word1, word2) VALUES (?, ?)", (word1, word2))
-							self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2=?", (word1, word2))
-						if len(words)!=0:
-							self.db_query("INSERT OR IGNORE INTO contexts (word1) VALUES (?)", (words[-1], ))
-							self.db_query("UPDATE contexts SET freq = freq + 1 WHERE word1=? AND word2 is ''", (words[-1], ))
+								newmin = post["no"]
 				self.db_commit()
 				return newmin
 		except:
@@ -65,7 +74,7 @@ class moduleClass(botModule):
 		try:
 			filter = threadfilter
 			if restart_timer:
-				filter = self.thread_filter
+				filter = self.get("thread_filter")
 				boards = self.learning_boards
 			for board in boards:
 				boardrequest = 'http://a.4cdn.org/' + board[0] + '/catalog.json'
@@ -121,7 +130,8 @@ class moduleClass(botModule):
 		self.send(chan, "Now have " + str(words) + " words and " + str(contexts)  + " contexts.")
 
 	def do_command(self, c, e, command, args, admin):
-		if command=="feedboard" and (("markov" in self.bot.modulenames) and admin):
+		#Need to add thread searching so this module isn't just a tumor of markov
+		if command=="feedboard" and (("markov" in self.bot.get("modules")) and admin):
 			if args:
 				boardcount = 0
 				for arg in args:
@@ -135,16 +145,16 @@ class moduleClass(botModule):
 					for board in args[0:boardcount]:
 						boards.append([board.split('/')[1], 0])
 				else:
-					for board in self.learning_boards:
-						boards.append([board[0], 0])
+					for board in self.get("learning_boards").split():
+						boards.append([board, 0])
 				t = threading.Thread(target=self.feed_board, args=(e.target, boards, ' '.join(args[boardcount:])))
 				t.daemon = True
 				t.start()
 			else:
-				t = threading.Thread(target=self.feed_board, args=(e.target, ([board[0], 0] for board in self.learning_boards), self.thread_filter))
+				t = threading.Thread(target=self.feed_board, args=(e.target, ([board, 0] for board in self.get("learning_boards").split), self.get("thread_filter")))
 				t.daemon = True
 				t.start()
-		elif command=="feedthread" and (("markov" in self.bot.modulenames) and admin):
+		elif command=="feedthread" and (("markov" in self.bot.get("modules")) and admin):
 			if len(args)==1 and len(args[0].split('/'))==3:
 				t = threading.Thread(target=self.feed_thread, args=(e.target, args[0].split('/')[2], args[0].split('/')[1]))
 				t.daemon = True
@@ -161,4 +171,4 @@ class moduleClass(botModule):
 		print("Starting board autolearn...")
 		self.board_learning()
 		print("Finished and restarting board autolearn.")
-		self.learn_schedule(self.checktimer)
+		self.learn_schedule(self.get("check_timer"))

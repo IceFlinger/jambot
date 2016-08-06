@@ -17,13 +17,22 @@ def mangle_line(line):
 	line = ' '.join(w for w in line.split() if w not in links) #Remove URLs
 	line = ' '.join(w for w in line.split() if w[0] not in "[\"(") #Remove timestamp type stuff and quotes
 	line = ' '.join(w for w in line.split() if w[-1] not in "\;\"%") #Remove broken words
-	line = ' '.join(w for w in line.split() if w[-1]!=">" and w[0]!="<") #Remove broken words
+	line = ' '.join(w for w in line.split() if w[-1]!=">" and w[0]!="<") #Remove nick tags
 	line = ' '.join(w for w in line.split() if not len(w)>26) #Remove long stuff
 	line = ''.join(c for c in line if c in f) #Filter whole string with f chars
 	return line
 
 class moduleClass(botModule):
 	dbload = True
+
+	def init_settings(self):
+		self.set("replyrate", 1)
+		self.set("learning", False)
+		self.set("rarewords", False)
+		self.set("nickreplyrate", 100)
+		self.set("maxchain", 20)
+		self.set("nicklesschans", "#discord")
+		self.set("cooldown", 2)
 
 	def help(command):
 		if (command == "words"):
@@ -33,17 +42,8 @@ class moduleClass(botModule):
 		return ""
 
 	def on_start(self, c, e):
-		self.replyrate = int(self.settings["replyrate"])
-		self.learning = False
-		self.rarewords = False
-		self.cooldown = int(self.settings["cooldown"])
+		self.nickreply = False
 		self.lastmsg = 0
-		self.maxchain = int(self.settings["maxchain"])
-		if self.settings["learning"]=="True":
-			self.learning = True
-		if self.settings["rarewords"]=="True":
-			self.rarewords = True
-		self.nickreplyrate = int(self.settings["nickreplyrate"])
 
 	def on_load_db(self):
 		self.db_query("CREATE TABLE IF NOT EXISTS contexts (word1 text DEFAULT '', word2 text DEFAULT '', freq int DEFAULT 0, UNIQUE(word1, word2))")
@@ -67,7 +67,7 @@ class moduleClass(botModule):
 					for word in next_words:
 						total_contexts += int(word[2])
 					if total_contexts != 0:
-						if self.rarewords:
+						if self.get("rarewords"):
 							selection = random.randint(1, random.randint(1, total_contexts))
 						else:
 							selection = random.randint(1, total_contexts)
@@ -80,12 +80,15 @@ class moduleClass(botModule):
 							if word[0] != "":
 								newword = word[0]
 					if newword != currentword:
-						if currentword=="#nick":
+						if currentword=="#nick" and not (e.target in self.get("nicklesschans").split()):
 							currentword=e.source.nick
+						elif currentword=="#nick":
+							currentword=""
+							newword = None
 						if chainlength != 0:
 							phrase = currentword + " " + phrase
 						chainlength += 1
-					if chainlength > self.maxchain/2:
+					if chainlength > self.get("maxchain")/2:
 						newword = None
 					currentword = newword
 				print(phrase, end=" ",flush=True)
@@ -98,7 +101,7 @@ class moduleClass(botModule):
 					for word in next_words:
 						total_contexts += int(word[2])
 					if total_contexts != 0:
-						if self.rarewords:
+						if self.get("rarewords"):
 							selection = random.randint(1, random.randint(1, total_contexts))
 						else:
 							selection = random.randint(1, total_contexts)
@@ -111,11 +114,14 @@ class moduleClass(botModule):
 							if word[1] != "":
 								newword = word[1]
 					if newword != currentword:
-						if currentword=="#nick":
+						if currentword=="#nick" and not (e.target in self.get("nicklesschans").split()):
 							currentword=e.source.nick
+						elif currentword=="#nick":
+							currentword=""
+							newword = None
 						phrase += currentword + " "
 						chainlength += 1
-					if chainlength > self.maxchain/2:
+					if chainlength > self.get("maxchain")/2:
 						newword = None
 					currentword = newword
 				print("")
@@ -129,7 +135,7 @@ class moduleClass(botModule):
 		msg = mangle_line(e.arguments[0])
 		own_nick = c.nickname
 		lametrig = (len(msg.split())==2 and msg.split()[0]==own_nick) #People just baiting replies, don't wanna learn single word replies
-		if self.learning and not lametrig:
+		if self.get("learning") and not lametrig:
 			try:
 				words = msg.split()
 				if len(words)!=0:
@@ -154,10 +160,10 @@ class moduleClass(botModule):
 					self.db_commit()
 			except:
 				pass
-		roll = self.replyrate>random.randint(0,99)
-		nickroll = self.nickreplyrate>random.randint(0,99)
+		roll = self.get("replyrate")>random.randint(0,99)
+		nickroll = self.get("nickreplyrate")>random.randint(0,99)
 		named = own_nick.lower() in msg.lower()
-		cooled = time.time()>(self.lastmsg+self.cooldown)
+		cooled = time.time()>(self.lastmsg+self.get("cooldown"))
 		if (roll or (nickroll and named)) and cooled:
 			#t = threading.Thread(target=self.build_sentence, args=(c, e, msg))
 			#t.daemon = True

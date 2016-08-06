@@ -34,12 +34,13 @@ class moduleClass(botModule):
 				self.send(e.target, "Tagged " + args[0] + " with '" + ' '.join(w for w in args[1:]) + "'")
 			except:
 				self.send(e.target, "Couldn't set tag")
-		tags = self.db_query("SELECT name FROM tags")
-		for tag in tags:
-			if tag[0] == command:
-				tagtext = self.db_query("SELECT tagtext FROM tags WHERE name=?", (command, ))[0][0]
-				self.db_commit()
-				self.send(e.target, tagtext)
+		else:
+			tags = self.db_query("SELECT name FROM tags")
+			for tag in tags:
+				if tag[0] == command:
+					tagtext = self.db_query("SELECT tagtext FROM tags WHERE name=?", (command, ))[0][0]
+					self.db_commit()
+					self.send(e.target, tagtext)
 
 	def shutdown(self):
 		pass

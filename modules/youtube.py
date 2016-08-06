@@ -26,17 +26,18 @@ def video_id(value):
 	return None
 
 class moduleClass(botModule):
+	def init_settings(self):
+		self.set("apikey", "", True)
+		self.set("titlefetch", True, False)
+
 	def on_start(self, c, e):
 		self.lastid = ""
-		self.titlefetch = False
-		if self.settings["titlefetch"] == "True":
-			self.titlefetch = True
 
 	def do_command(self, c, e, command, args, admin):
 		if ((command == "yt") or (command == "youtube")) and len(args) > 0:
 			try:
 				msg = ""
-				g_api_key = self.settings["apikey"]
+				g_api_key = self.get("apikey")
 				query = ' '.join(args)
 				s = requests.Session()
 				search = s.get("https://www.googleapis.com/youtube/v3/search",
@@ -73,7 +74,7 @@ class moduleClass(botModule):
 		
 		try:
 			for link in links:
-				if (('youtube' in link) or ('youtu.be' in link)) and self.titlefetch:
+				if (('youtube' in link) or ('youtu.be' in link)) and self.get("titlefetch"):
 					videoId = video_id(link)
 					if self.lastid != videoId:
 						g_api_key = self.settings["apikey"]

@@ -5,6 +5,16 @@ from jambot import botModule
 #self.db_commit()
 class moduleClass(botModule):
 #	dbload = True
+	def init_settings(self):
+		self.set("bool", False)
+		self.set("secretbool", False, True)
+		self.set("int", 3)
+		self.set("secretint", 4, True)
+		self.set("float", 3.23342)
+		self.set("secretfloat", 4.34234, True)
+		self.set("string", "default string")
+		self.set("secretstring", "default secret string", True)
+
 	def on_start(self, c, e):
 		pass
 	def on_load_db(self):

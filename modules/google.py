@@ -8,6 +8,10 @@ class moduleClass(botModule):
 			return "searches google and returns the top result for the query"
 		return ""
 
+	def init_settings(self):
+		self.set("apikey", "", True)
+		self.set("search_engine_id", "", True)
+
 	def on_start(self, c, e):
 		pass
 
@@ -25,8 +29,8 @@ class moduleClass(botModule):
 			if args:
 				try:
 					msg = ""
-					g_api_key = self.settings["apikey"]
-					search_engine_id = self.settings["search_engine_id"]
+					g_api_key = self.get("apikey")
+					search_engine_id = self.get("search_engine_id")
 					query = ' '.join(args)
 					s = requests.Session()
 					search = s.get("https://www.googleapis.com/customsearch/v1",
