@@ -8,13 +8,23 @@ import hashlib
 import io
 from PIL import Image, ImageOps
 
+debug = False
+
 class moduleClass(botModule):
 	def init_settings(self):
-		self.set("upload_delay", 300)
-		self.set("local_folder", "/path/to/local/folder/", True)
-		self.set("unconverted_folder", "/path/to/local/unconverted/folder/", True)
-		self.set("web_folder", "https://your.domain/folder/")
-		self.set("max_filesize", 2097152)
+		self.set("upload_delay", 300, "Delay between allowing flag uploads")
+		self.set("local_folder", "/path/to/local/folder/", "local folder to store converted flags into (backend location of web folder)", True)
+		self.set("save_unconverted", True, "Choose to save images in unconverted form as well")
+		self.set("unconverted_folder", "/path/to/local/unconverted/folder/", "a folder to keep unconverted images in",True)
+		self.set("web_folder", "https://your.domain/folder/", "Web prefix of where to retrieve uploaded images")
+		self.set("max_filesize", 2097152, "Maximum filesize of uploaded files")
+		self.set("resize", True, "Switch for resizing images before uploading")
+		self.set("border", True, "Switch for adding a border to resized images")
+		self.set("resize_width", 500, "Width of resized images")
+		self.set("resize_height", 192, "Height of resized images")
+		self.set("border_size", 1, "Width of border to add to resized images if enabled")
+		self.set("orent_check", "none", "set to 'long' or 'tall' to only accept images oriented that way")
+
 
 	def on_start(self, c, e):
 		self.last_update = 0
@@ -37,21 +47,36 @@ class moduleClass(botModule):
 			content = ctt.getvalue()
 			img_in = Image.open(io.BytesIO(content))
 			img_size = img_in.size
-			if img_size[0] < img_size[1]:
-				self.output("That image isn't flag shaped", ("", source, target, c, e))
+			if img_size[0] < img_size[1] and self.get("orent_check") == "long":
+				self.output("That image isn't long", ("", source, target, c, e))
+				raise
+			elif img_size[0] > img_size[1] and self.get("orent_check") == "tall":
+				self.output("That image isn't tall", ("", source, target, c, e))
 				raise
 			hash = hashlib.md5()
 			hash.update(content)
 			i = hash.hexdigest()
-			img_in.save(self.get("unconverted_folder") + i + '.png', 'PNG')
-			img_out = img_in.resize((498,190), Image.ANTIALIAS)
-			img_out = ImageOps.expand(img_out,border=1,fill='black')
+			if self.get("save_unconverted"):
+				img_in.save(self.get("unconverted_folder") + i + '.png', 'PNG')
+			img_out = img_in
+			if self.get("resize"):
+				x = self.get("resize_width")
+				y = self.get("resize_height")
+				if self.get("border"):
+					border = self.get("border_size")
+					img_out = img_in.resize((x-(border*2),y-(border*2)), Image.ANTIALIAS)
+					img_out = ImageOps.expand(img_out,border=border,fill='black')
+				else:
+					img_out = img_in.resize((x,y), Image.ANTIALIAS)
 			img_out.save(self.get("local_folder") + i + '.png', 'PNG')
 			self.send(e.target, self.get("web_folder") + i + ".png")
 			return True
 		except:
 			self.send(e.target, "Problem flagging that")
-			pass
+			if debug:
+				raise
+			else:
+				pass
 		return False
 
 	def do_command(self, c, e, command, args, admin):
@@ -65,6 +90,7 @@ class moduleClass(botModule):
 		elif command == "flag" and not args:
 			r = requests.get(self.get("web_folder"))
 			d = html.fromstring(r.content)
-			list = d.xpath('//a[@href]/@href')
-			id = random.randint(0,len(list))
-			self.send(e.target, self.get("web_folder") + list[id])
+			imglist = d.xpath('//a[@href]/@href')
+			imglist = imglist[5:] #first 4 links are random index shit, lazy way to skip (add check for image extension)
+			id = random.randint(0,len(imglist)-1)
+			self.send(e.target, self.get("web_folder") + imglist[id])

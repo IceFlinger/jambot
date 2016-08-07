@@ -17,12 +17,13 @@ debug = False
 class botModule():
 	dbload = False
 
-	def set(self, setting, value, secret = False):
+	def set(self, setting, value, desc = "", secret = False):
 		try:
-			secret = self.bot.settings[self.name][setting][1]
+			desc = self.bot.settings[self.name][setting][1]
+			secret = self.bot.settings[self.name][setting][2]
 		except:
 			pass
-		self.bot.settings[self.name][setting] = (value, secret)
+		self.bot.settings[self.name][setting] = (value, desc, secret)
 
 	def get(self, setting):
 		return self.bot.settings[self.name][setting][0]
@@ -270,7 +271,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 					qvalue = " ".join(args[2:])
 					if qmodule in self.get("modules"):
 						if qsetting in self.settings[qmodule]:
-							if e.type == "privmsg" or not self.settings[qmodule][qsetting][1]:
+							if e.type == "privmsg" or not self.settings[qmodule][qsetting][2]:
 								try:
 									oldvalue = self.settings[qmodule][qsetting][0]
 									newvalue = oldvalue
@@ -285,7 +286,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 											newvalue = False
 									else:
 										newvalue = str(qvalue)
-									self.settings[qmodule][qsetting] = (newvalue, self.settings[qmodule][qsetting][1])
+									self.settings[qmodule][qsetting] = (newvalue, self.settings[qmodule][qsetting][1], self.settings[qmodule][qsetting][2])
 									self.send_msg(e.target, qmodule + " setting " + qsetting + " changed from " + str(oldvalue) + " to " + str(newvalue))
 								except:
 									self.send_msg(e.target, qmodule + " setting " + qsetting + " could not be set to " + str(qvalue))
@@ -299,9 +300,8 @@ class botMain(irc.bot.SingleServerIRCBot):
 					qmodule = args[0]
 					qsetting = args[1]
 					if qmodule in self.get("modules"):
-						print(qmodule + ": " + str(self.settings[qmodule]))
 						if qsetting in self.settings[qmodule]:
-							if e.type == "privmsg" or not self.settings[qmodule][qsetting][1]:
+							if e.type == "privmsg" or not self.settings[qmodule][qsetting][2]:
 								value = self.settings[qmodule][qsetting][0]
 								self.send_msg(e.target, qmodule + " setting " + qsetting + " is set to " + str(value))
 							else:
@@ -345,14 +345,15 @@ class botMain(irc.bot.SingleServerIRCBot):
 				for module in self.get("modules"):
 					conf.write('[' + module + ']\n')
 					for setting in self.settings[module]:
+						conf.write('# ' + str(self.settings[module][setting][1]) + "\n")
 						conf.write(setting + '\t= ' + str(self.settings[module][setting][0]) + "\n")
 					conf.write('\n')
 				conf.close()
 				self.send_msg(e.target, "Saved new config to " + config_file)
 
 			else:
-				break #Probably for seperate behavior between admins/non with the same command
-			return
+				break 
+			return #Commands run as admin won't run again as a regular user
 
 		if command == "version":
 			self.send_msg(e.target, "Version: " + self.get("version"))
@@ -365,7 +366,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 				qsetting = args[1]
 				if qmodule in self.get("modules"):
 					if qsetting in self.settings[qmodule]:
-						if not self.settings[qmodule][qsetting][1]:
+						if not self.settings[qmodule][qsetting][2]:
 							value = str(self.settings[qmodule][qsetting][0])
 							self.send_msg(e.target, qmodule + " setting " + qsetting + " is set to " + str(value))
 						else:

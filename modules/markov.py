@@ -26,13 +26,13 @@ class moduleClass(botModule):
 	dbload = True
 
 	def init_settings(self):
-		self.set("replyrate", 1)
-		self.set("learning", False)
-		self.set("rarewords", False)
-		self.set("nickreplyrate", 100)
-		self.set("maxchain", 20)
-		self.set("nicklesschans", "#discord")
-		self.set("cooldown", 2)
+		self.set("replyrate", 1, "Percentage rate for randomly replying to messages")
+		self.set("learning", False, "Learn new words from IRC channels joined")
+		self.set("rarewords", False, "Use rarer word algorithm when building sentences")
+		self.set("nickreplyrate", 100, "Percentage rate to reply when own nick is mentioned")
+		self.set("maxchain", 20, "Maximum length of generated sentences")
+		self.set("nicklesschans", "#discord", "Don't mention user nicks in these channels") #relay bot safety
+		self.set("cooldown", 2, "Cooldown in seconds before able to generate another reply")
 
 	def help(command):
 		if (command == "words"):
@@ -53,39 +53,39 @@ class moduleClass(botModule):
 		phrase = ""
 		try:
 			chainlength = 0
-			exist_words = []
+			exist_words = [] #look for words in the trigger sentence that we know already
 			for word in self.db_query("SELECT word1 FROM contexts WHERE instr(LOWER(?), LOWER(word1)) > 0 GROUP BY lower(word1) ORDER BY sum(freq) ", [msg]):
 				if (word[0].lower() in msg.lower().split()) and (word[0].lower()!=c.nickname.lower()):
 					exist_words.append(word)
 			if exist_words:
 				roll = random.randint(1,int(math.ceil(len(exist_words)/2)))
-				seedword = exist_words[roll-1][0].lower()
+				seedword = exist_words[roll-1][0].lower() #pick a random known word to build a sentence from
 				currentword = seedword
-				while currentword != None:
+				while currentword != None: #begin building sentence backwards from seed word
 					next_words = self.db_query("SELECT * FROM contexts WHERE LOWER(word2) LIKE LOWER(?) ORDER BY freq ASC", [currentword])
 					total_contexts = 0
 					for word in next_words:
-						total_contexts += int(word[2])
+						total_contexts += int(word[2]) #for selecting a new word based on weight, we total all contexts
 					if total_contexts != 0:
-						if self.get("rarewords"):
+						if self.get("rarewords"): #extra weight towards words with low contexts for variety
 							selection = random.randint(1, random.randint(1, total_contexts))
 						else:
 							selection = random.randint(1, total_contexts)
 					else:
-						selection = 0
+						selection = 0 #No contexts at all, nothing to select
 					newword = None
-					for word in next_words:
+					for word in next_words: #Selection counts down in order to find next word to add to phrase
 						selection -= int(word[2])
-						if selection < 1 and newword == None:
+						if selection < 1 and newword == None: #take the one word found when selection crosses 0
 							if word[0] != "":
 								newword = word[0]
-					if newword != currentword:
+					if newword != currentword: #don't use the same word twice in a row, we can endlessly loop
 						if currentword=="#nick" and not (e.target in self.get("nicklesschans").split()):
-							currentword=e.source.nick
+							currentword=e.source.nick #replace #nick token with triggering nick
 						elif currentword=="#nick":
-							currentword=""
+							currentword="" #if messages are being relayed through a bot, we'd use the bots name as a word, no good
 							newword = None
-						if chainlength != 0:
+						if chainlength != 0: #not sure about this? would this skip the first context chain without adding to phrase?
 							phrase = currentword + " " + phrase
 						chainlength += 1
 					if chainlength > self.get("maxchain")/2:

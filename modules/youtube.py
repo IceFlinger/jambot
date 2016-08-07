@@ -27,8 +27,8 @@ def video_id(value):
 
 class moduleClass(botModule):
 	def init_settings(self):
-		self.set("apikey", "", True)
-		self.set("titlefetch", True, False)
+		self.set("apikey", "", "API key for google services", True)
+		self.set("titlefetch", True, "Toggle fetching titles of pasted youtube URLS")
 
 	def on_start(self, c, e):
 		self.lastid = ""

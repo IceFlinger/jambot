@@ -9,8 +9,8 @@ class moduleClass(botModule):
 		return ""
 
 	def init_settings(self):
-		self.set("apikey", "", True)
-		self.set("search_engine_id", "", True)
+		self.set("apikey", "", "API key for google services",True)
+		self.set("search_engine_id", "", "Search engine ID for google services",True)
 
 	def on_start(self, c, e):
 		pass

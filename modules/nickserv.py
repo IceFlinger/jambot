@@ -4,7 +4,7 @@ class moduleClass(botModule):
 #	dbload = True
 
 	def init_settings(self):
-		self.set("nickserv_pass", "", True)
+		self.set("nickserv_pass", "", "Password to use for nickserv, automatically registers if new", True)
 
 	def on_privmsg(self, c, e):
 		if e.type=="privnotice" and e.source.split("!")[0].lower()=="nickserv":

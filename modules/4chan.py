@@ -18,9 +18,9 @@ def mangle_line(line):
 
 class moduleClass(botModule):
 	def init_settings(self):
-		self.set("check_timer", 300)
-		self.set("learning_boards", "vg")
-		self.set("thread_filter", "srg")
+		self.set("check_timer", 300, "time between automatically checking 4chan boards to learn from")
+		self.set("learning_boards", "vg", "selected boards to use for markov learning")
+		self.set("thread_filter", "srg", "filter threads learned from by title (useful for generals)")
 
 	def on_start(self, c, e):
 		self.learning_boards = []
@@ -28,7 +28,7 @@ class moduleClass(botModule):
 			for board in self.get("learning_boards").split():
 				self.learning_boards.append([board, 0]) #learning boards only load on init, changes to settings won't affect them
 		else:
-			print("You need to load the markov module to learn from 4chan boards.")
+			print("You need to load the markov module to learn from 4chan boards.") #lies, this logic is stupid, fix later
 		if self.get("check_timer") > 0:
 			self.learn_schedule(self.get("check_timer"))
 

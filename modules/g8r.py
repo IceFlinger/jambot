@@ -4,7 +4,7 @@ from jambot import botModule
 # g8r module
 class moduleClass(botModule):
 	def init_settings(self):
-		self.set("g8r", True)
+		self.set("g8r", True, "Enable/disable g8r trap")
 
 	def on_start(self, c, e):
 		self.bottom = False
