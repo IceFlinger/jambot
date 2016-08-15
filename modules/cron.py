@@ -26,7 +26,7 @@ def check_crontime(timestring): #returns true if valid cron is true for this min
 			months = True
 	weekdays = False
 	for weekday in times[4].split(","):
-		if weekday == "*" or weekday == str(time.localtimetime.time()().tm_wday):
+		if weekday == "*" or weekday == str(time.localtime(time.time()).tm_wday):
 			weekdays = True
 	return minutes and hours and days and months and weekdays
 	#Only returns true if we pass checks for every time slot
