@@ -144,36 +144,66 @@ Most of the module API is shown off in the sample.py module:
 
 Finally, an outline of some of the existing modules and how they work:
 
-	markov: Learn words from chatter and reply with its own built sentences. Feed a txt file from the web in with the 'feed url' command, check for word count with 'words', check if a word is learned with 'known word', or 'clean' the current database so words learned afterwords pop up more
+	markov: Learn words from chatter and reply with its own built sentences. Feed a txt file from the web 
+	in with the 'feed url' command, check for word count with 'words', check if a word is learned with 
+	'known word', or 'clean' the current database so words learned afterwords pop up more
 
-	4chan: Extension of the markov module, use 4chan boards and threads as a word bank for learning markov phrases. Either configured to scan regularly with config settings, or fed an entire board with 'feedboard /vg/ filter', or a specific thread with 'feedthread /board/threadnumber'
+	4chan: Extension of the markov module, use 4chan boards and threads as a word bank for learning markov
+	 phrases. Either configured to scan regularly with config settings, or fed an entire board with 
+	 'feedboard /vg/ filter', or a specific thread with 'feedthread /board/threadnumber'
 
-	alert: enables 'alert' command which highlights every single person in the channel. only load if you're sure people won't be annoyed.
+	alert: enables 'alert' command which highlights every single person in the channel. only load if 
+	you're sure people won't be annoyed.
 
-	cron: schedule other commands to run at scheduled times formatted like cron jobs. formatted as either * for all values, or a comma-seperated list of possible values, ordered like 'minute[0-59] hour[0-23] day[1-31] month[1-12] weekday[0-6]'. Jobs are added with 'addcron (scheduled time) #channel command args', and can be any commands from other modules. List current jobs with 'listcron' and delete them with 'delcron index'. All cron commands are admin only, and executed as if the bot sent them itself, meaning if the bot's own host is configured as admin, commands will be admin as well.
+	cron: schedule other commands to run at scheduled times formatted like cron jobs. formatted as 
+	either * for all values, or a comma-seperated list of possible values, ordered like 
+	'minute[0-59] hour[0-23] day[1-31] month[1-12] weekday[0-6]'. Jobs are added with 
+	'addcron (scheduled time) #channel command args', and can be any commands from other modules. 
+	List current jobs with 'listcron' and delete them with 'delcron index'. All cron commands are admin only, 
+	and executed as if the bot sent them itself, meaning if the bot's own host is configured as admin, 
+	commands will be admin as well.
 
-	flags: Image uploader and resizer. Assumes bot is running on same server as a configured webserver, can save images from url to a local folder and return a url of the new image. Options exist in the config for resizing the image, accepting certain orientations, or adding a border. Images are added by anyone with 'flag url', or running just 'flags' scans the configured web folder for links to images and returns one at random.
+	flags: Image uploader and resizer. Assumes bot is running on same server as a configured webserver, 
+	can save images from url to a local folder and return a url of the new image. Options exist in the 
+	config for resizing the image, accepting certain orientations, or adding a border. Images are added
+	 by anyone with 'flag url', or running just 'flags' scans the configured web folder for links to 
+	 images and returns one at random.
 
 	g8r: funny meme g8r just use 'g8r' command and eat people
 
-	google: Configure proper API keys from google in the config file and use 'g query' command to search google and return results in channel
+	google: Configure proper API keys from google in the config file and use 'g query' command to search 
+	google and return results in channel
 
 	monitor: useful for debugging only, dumps e event objects into console as they're recieved
 
-	nickserv: configure a password in config file to automatically register/sign in with nickserv on given server
+	nickserv: configure a password in config file to automatically register/sign in with nickserv on 
+	given server
 
-	rng: useful randomization tools, 'random 0 10' to roll integers between specified values, 'choose one two' to randomly select one of many supplied args, or 'shuffle one two' to return the list of args randomly shuffled around.
+	rng: useful randomization tools, 'random 0 10' to roll integers between specified values, 
+	'choose one two' to randomly select one of many supplied args, or 'shuffle one two' to 
+	return the list of args randomly shuffled around.
 
 	sample: described above, simply demos some features of the module api
 
 	say: 'say whatever' command simply echos whatever is supplied as args
 
-	tag: custom static command module, arbitrary words can be made into commands with 'tag name data', and later retrieved with just 'name' as a command itself. Useful for storing URLs or images with certain aliases. A txt file to dump saved tags to can be configured in config similar to the folder used for the flags module. Tags can be deleted by admins with 'deltag tagname'. (todo: optionally admin-protect flags i guess)
+	tag: custom static command module, arbitrary words can be made into commands with 'tag name data', 
+	and later retrieved with just 'name' as a command itself. Useful for storing URLs or images with 
+	certain aliases. A txt file to dump saved tags to can be configured in config similar to the folder 
+	used for the flags module. Tags can be deleted by admins with 'deltag tagname'. 
+	(todo: optionally admin-protect flags i guess)
 
-	twitch: Monitor a list of twitch streamers, announce when they go live or check who's currently live with 'streams', and count minutes bot has tracked stream live (for fun). Check who's currently tracked and their time with 'liststreams', or admins can 'addstream channelname' and 'delstream channelname'
+	twitch: Monitor a list of twitch streamers, announce when they go live or check who's currently
+	 live with 'streams', and count minutes bot has tracked stream live (for fun). Check who's 
+	 currently tracked and their time with 'liststreams', or admins can 'addstream channelname' 
+	 and 'delstream channelname'
 
-	twittertools: Can use twitter API keys to access its own twitter account. Optionally dump timeline as it updates to a specified channel, or admins can write tweets with 'tweet whatever'. Originally conceived as extension for markov module and has features reflecting this, can be configured to automatically tweet the last messaged generated by certain modules (ex markov) at specified intervals.
+	twittertools: Can use twitter API keys to access its own twitter account. Optionally dump timeline
+	 as it updates to a specified channel, or admins can write tweets with 'tweet whatever'. Originally
+	  conceived as extension for markov module and has features reflecting this, can be configured to 
+	  automatically tweet the last messaged generated by certain modules (ex markov) at specified intervals.
 
 	urbandict: look up query on urbandictionary for definition with 'ud query' or 'urbandictionary query'
-	
-	youtube: Similar to google module and uses same API keys, search youtube for videos with 'yt query'. Can also be set to parse youtube URLs and retrieve title info as they are pasted into channels.
+
+	youtube: Similar to google module and uses same API keys, search youtube for videos with 'yt query'. 
+	Can also be set to parse youtube URLs and retrieve title info as they are pasted into channels.
