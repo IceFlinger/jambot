@@ -30,7 +30,7 @@ class moduleClass(botModule):
 
 	def on_start(self, c, e):
 		self.local_var = 0 #non config based local vars get initialized on start
-		self.last_msg = self.get("string") #Example of something to keep track of, initialized with configred setting if wanted
+		self.last_msg = self.get("string") #Example of something to keep track of, initialized with configured setting if wanted
 
 		#other useful things to do here include initializing timers and threads
 

@@ -85,7 +85,7 @@ class moduleClass(botModule):
 
 	def on_start(self, c, e):
 		self.local_var = 0 #non config based local vars get initialized on start
-		self.last_msg = self.get("string") #Example of something to keep track of, initialized with configred setting if wanted
+		self.last_msg = self.get("string") #Example of something to keep track of, initialized with configured setting if wanted
 		#other useful things to do here include initializing timers and threads
 
 	def on_load_db(self):
@@ -218,6 +218,9 @@ Finally, an outline of some of the existing modules and how they work:
 	sample: described above, simply demos some features of the module api
 
 	say: 'say whatever' command simply echos whatever is supplied as args
+
+	quote: Remember funny stuff that people say. use 'addquote nickname' to add the last thing nickname 
+	said into quotes, and use 'q' or 'quote' to retrieve one at random
 
 	tag: custom static command module, arbitrary words can be made into commands with 'tag name data', 
 	and later retrieved with just 'name' as a command itself. Useful for storing URLs or images with 
