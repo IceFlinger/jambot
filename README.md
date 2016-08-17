@@ -135,11 +135,45 @@ class moduleClass(botModule):
 		#This hook is triggered by any event where the bot itself is expected to be e.target (pings, privmsgs)
 		if e.type == "privmsg":
 			print("Secret from " + e.source.nick + ": " + e.arguments[0])
-			
+
 	def shutdown(self):
 		#Run whenever the bot is shutdown, useful for closing opened files if needed (db is handled by main bot already)
 		pass
 ```
+All of the module methods are optional and don't need to be defined if they aren't use. For starting a new module, there's the mostly blank blank.py to build from
+```python
+from jambot import botModule
+
+class moduleClass(botModule):
+	#dbload = True
+	def init_settings(self):
+		pass
+
+	def on_start(self, c, e):
+		pass
+
+	def on_load_db(self):
+		pass
+
+	def do_command(self, c, e, command, args, admin):
+		pass
+
+	def on_send(self, chan, msg, modulename):
+		pass
+
+	def on_pubmsg(self, c, e):
+		pass
+
+	def on_event(self, c, e):
+		pass
+
+	def on_privmsg(self, c, e):
+		pass
+
+	def shutdown(self):
+		pass
+```
+
 Finally, an outline of some of the existing modules and how they work:
 
 	markov: Learn words from chatter and reply with its own built sentences. Feed a txt file from the web 
