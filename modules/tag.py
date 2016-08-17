@@ -37,7 +37,19 @@ class moduleClass(botModule):
 				dump.close()
 			except:
 				self.send(e.target, "Couldn't dump tags")
-				raise
+				pass
+		elif (command == "deltag") and args and admin:
+			if len(args) != 1:
+				self.send(e.target, "Give a single tag to delete")
+			else:
+				try:
+					self.db_query("DELETE FROM tags WHERE name=?", (args[0], ))
+					self.db_commit()
+					self.send(e.target, "Deleted " + args[0] + " from tags")
+				except:
+					self.send(e.target, "Something went wrong deleting " + args[0] + " from list")
+					for error in sys.exc_info():
+						print(str(error))
 		else:
 			tags = self.db_query("SELECT name FROM tags")
 			for tag in tags:

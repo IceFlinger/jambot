@@ -252,14 +252,6 @@ class botMain(irc.bot.SingleServerIRCBot):
 				self.send_msg(e.target, "Setting command prefix to " + args[0][0])
 				self.set("command_prefix", args[0][0])
 
-			elif command == "addowner":
-				for arg in args:
-					if "@" not in arg:
-						self.send_msg(e.target, "Invalid host")
-					else:
-						self.send_msg(e.target, "Adding " + arg + "to owners")
-						self.set("owner_hosts", (self.get("owner_hosts") + " " + arg))
-
 			elif command == "quit":
 				self.send_msg(e.target, "Quitting...")
 				self.shutdown()
@@ -381,19 +373,6 @@ class botMain(irc.bot.SingleServerIRCBot):
 			for module in self.get("modules"):
 				modulelist = modulelist + " " + module
 			self.send_msg(e.target, "Loaded modules:" + modulelist)
-
-		elif command == "help" and args:
-			return #gonna work on help later
-			for module in self.modules:
-				helpmsg = ""
-				helpmsg = module.help(args[0])
-				if helpmsg != "":
-					self.send_msg(e.target, module.name + ": " + helpmsg)
-
-		elif command == "help":
-			return
-			self.send_msg(e.target,"help: type " + "help <command> for help on a specific command")
-
 		else:
 			for module in self.modules:
 				module.do_command(c, e, command, args, admin)
