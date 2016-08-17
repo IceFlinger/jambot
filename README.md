@@ -53,7 +53,7 @@ Regular bot commands:
 	Commands not caught by these are passed onto every module to be processed
 
 Most of the module API is shown off in the sample.py module:
-
+```python
 	from jambot import botModule
 	#Small sample module
 	#self.send(chan, msg):
@@ -141,7 +141,7 @@ Most of the module API is shown off in the sample.py module:
 		def shutdown(self):
 			#Run whenever the bot is shutdown, useful for closing opened files if needed (db is handled by main bot already)
 			pass
-
+```
 Finally, an outline of some of the existing modules and how they work:
 
 	markov: Learn words from chatter and reply with its own built sentences. Feed a txt file from the web 
