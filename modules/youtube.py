@@ -71,13 +71,12 @@ class moduleClass(botModule):
 
 	def on_pubmsg(self, c, e):
 		links = re.findall(r'(https?://\S+)', e.arguments[0])
-		
 		try:
 			for link in links:
 				if (('youtube' in link) or ('youtu.be' in link)) and self.get("titlefetch"):
 					videoId = video_id(link)
 					if self.lastid != videoId:
-						g_api_key = self.settings["apikey"]
+						g_api_key = self.get("apikey")
 						s = requests.Session()
 						search = s.get("https://www.googleapis.com/youtube/v3/videos",
 							params={
@@ -95,4 +94,6 @@ class moduleClass(botModule):
 						self.send(e.target, msg)
 						self.lastid = videoId
 		except:
+			for error in sys.exc_info():
+				print(str(error))
 			pass
