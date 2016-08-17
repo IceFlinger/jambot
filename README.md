@@ -140,7 +140,7 @@ class moduleClass(botModule):
 		#Run whenever the bot is shutdown, useful for closing opened files if needed (db is handled by main bot already)
 		pass
 ```
-All of the module methods are optional and don't need to be defined if they aren't use. For starting a new module, there's the mostly blank blank.py to build from
+All of the module methods are optional and don't need to be defined if they aren't used. For starting a new module, there's the skeleton blank.py to build from:
 ```python
 from jambot import botModule
 
