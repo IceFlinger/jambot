@@ -1,10 +1,12 @@
 from jambot import botModule
 import sys
 import twitter
+from urllib.parse import urlparse
 from threading import Timer
 from twitter import *
 import time
 import random
+import re
 #Twittertools module
 
 class bcolors:
@@ -16,6 +18,17 @@ class bcolors:
 	EXTRAS = '\x0313'
 	HASHTAG = '\x038'
 	ENDC = '\x0f'
+
+def tweet_id(value):
+	query = urlparse(value)
+	if query.hostname in ('www.twitter.com', 'twitter.com'):
+		try:
+			if query.path.split('/')[2] == 'status':
+				return query.path.split('/')[3]
+		except:
+			return None
+	# fail?
+	return None
 
 class moduleClass(botModule):
 	def init_settings(self):
@@ -32,6 +45,7 @@ class moduleClass(botModule):
 		self.set("tweetdelay_upper", 2000, "Maximum delay before able to randomly tweet again (prevents users sniping timer)")
 		self.set("tweet_length", 4, "Minimum length of an automatic tweet")
 		self.set("check_timer", 60, "Time in seconds between checking for feed updates (Minimum 60 to follow twitter API rules)")
+		self.set("tweet_preview", True, "Prefetch tweets from pubmessages (still needs API keys)")
 
 	def on_start(self, c, e):
 		self.channels = []
@@ -49,6 +63,37 @@ class moduleClass(botModule):
 			for error in sys.exc_info():
 				print(str(error))
 
+	def make_tweetmsg(self, tweet):
+		tweet_name = tweet['user']['name']
+		tweet_handle = tweet['user']['screen_name']
+		tweet_text_pre = tweet['text'].split()
+		tweet_text = ""
+		for line in tweet_text_pre:
+			if line[0] == "@":
+				if line == ("@" + tweet_handle):
+					line = bcolors.HANDLE + line + bcolors.MSG
+				else:
+					line = bcolors.MENTION + line + bcolors.MSG
+			elif (line[0] == ".") and (len(line) > 1):
+				if line[1] == "@":
+					if line == (".@" + tweet_handle):
+						line = bcolors.HANDLE + line + bcolors.MSG
+					else:
+						line = bcolors.MENTION + line + bcolors.MSG
+			elif line[0] == "#":
+				line = bcolors.HASHTAG + line + bcolors.MSG
+			tweet_text += line + " "
+		tweet_link = ""
+		if "urls" in tweet["entities"]:
+			for url in tweet["entities"]["urls"]:
+				tweet_link += url["display_url"] + " "
+		tweet_extras = ""
+		if 'media' in tweet['entities']:
+			for media in tweet['entities']['media']:
+				tweet_extras += "[" + media['type']+ "]"
+		tweet_string = bcolors.NAME + tweet_name + bcolors.HANDLE + " @" + tweet_handle + ": " + bcolors.MSG + tweet_text + " " + bcolors.EXTRAS + tweet_extras + bcolors.MSG + tweet_link + bcolors.ENDC
+		return(tweet_string)
+
 	def check_twitter(self):
 		try:
 			t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"), self.get("consumer_key"), self.get("consumer_secret")))
@@ -57,35 +102,8 @@ class moduleClass(botModule):
 			for tweet in timeline:
 				if (int(tweet['id']) == self.last_update) or (tweet['user']['screen_name'].lower() == self.get("account_name").lower()):
 					break
-				tweet_name = tweet['user']['name']
-				tweet_handle = tweet['user']['screen_name']
-				tweet_text_pre = tweet['text'].split()
-				tweet_text = ""
-				for line in tweet_text_pre:
-					if line[0] == "@":
-						if line == ("@" + tweet_handle):
-							line = bcolors.HANDLE + line + bcolors.MSG
-						else:
-							line = bcolors.MENTION + line + bcolors.MSG
-					elif (line[0] == ".") and (len(line) > 1):
-						if line[1] == "@":
-							if line == (".@" + tweet_handle):
-								line = bcolors.HANDLE + line + bcolors.MSG
-							else:
-								line = bcolors.MENTION + line + bcolors.MSG
-					elif line[0] == "#":
-						line = bcolors.HASHTAG + line + bcolors.MSG
-					tweet_text += line + " "
-				tweet_link = ""
-				if "urls" in tweet["entities"]:
-					for url in tweet["entities"]["urls"]:
-						tweet_link += url["display_url"] + " "
-				tweet_extras = ""
-				if 'media' in tweet['entities']:
-					for media in tweet['entities']['media']:
-						tweet_extras += "[" + media['type']+ "]"
-				tweet_string = bcolors.NAME + tweet_name + bcolors.HANDLE + " @" + tweet_handle + ": " + bcolors.MSG + tweet_text + " " + bcolors.EXTRAS + tweet_extras + bcolors.MSG + tweet_link + bcolors.ENDC
-				tweets.append(tweet_string)
+				msg = self.make_tweetmsg(tweet)
+				tweets.append(msg)
 			for tweet in reversed(tweets):
 				for channel in self.get("news_chans").split():
 					self.send(channel, tweet)
@@ -107,7 +125,19 @@ class moduleClass(botModule):
 		self.twitter_schedule(self.checktimer)
 
 	def on_pubmsg(self, c, e):
-		pass
+		links = re.findall(r'(https?://\S+)', e.arguments[0])
+		try:
+			for link in links:
+				if (('twitter' in link)) and self.get("tweet_preview"):
+					tweetId = tweet_id(link)
+					t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"), self.get("consumer_key"), self.get("consumer_secret")))
+					status = t.statuses.show(id=tweetId)
+					msg = self.make_tweetmsg(status)
+					self.send(e.target, msg)
+		except:
+			for error in sys.exc_info():
+				print(str(error))
+			pass
 
 	def on_send(self, chan, msg, modulename):
 		if modulename != "twittertools":

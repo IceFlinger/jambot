@@ -17,7 +17,8 @@ class moduleClass(botModule):
 		print(vars(e))
 
 	def do_command(self, c, e, command, args, admin):
-		pass
+		print("Command Event:")
+		print(vars(e))
 
 	def on_privmsg(self, c, e):
 		print("Private Event:")

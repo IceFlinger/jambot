@@ -13,16 +13,7 @@ def lim_space(string, count):
 	else:
 		return string
 
-def validate_twitch_name(twitchname):
-	try:
-		s = requests.Session()
-		check = s.get("https://api.twitch.tv/kraken/channels/" + twitchname)
-		result = check.json()
-		if "error" in result:
-			return False
-		return True
-	except:
-		return False
+
 
 class moduleClass(botModule):
 	dbload = True
@@ -31,8 +22,7 @@ class moduleClass(botModule):
 		self.set("announce_chans", "", "Announce when a tracked stream comes online in these channels")
 		self.set("max_gamelength", 16, "Maximum length to print of game titles")
 		self.set("max_statuslength", 24, "Maximum length to print of game titles")
-
-
+		self.set("api_client_id", "", "Client ID for twitch API usage", True)
 
 	def on_load_db(self):
 		self.db_query("CREATE TABLE IF NOT EXISTS streams (id INTEGER PRIMARY KEY ASC, channel text, totaltime INTEGER DEFAULT 0)")
@@ -42,6 +32,20 @@ class moduleClass(botModule):
 		self.channels = []
 		self.check_streams(True)
 		self.check_schedule(60)
+
+	def validate_twitch_name(self, twitchname):
+		try:
+			s = requests.Session()
+			check = s.get("https://api.twitch.tv/kraken/channels/" + twitchname,
+						headers={
+							"Client-ID": self.get("api_client_id")
+						})
+			result = check.json()
+			if "error" in result:
+				return False
+			return True
+		except:
+			return False
 
 	def announce_stream(self, stream):
 		for ircchan in self.get("announce_chans").split(" "):
@@ -54,7 +58,7 @@ class moduleClass(botModule):
 
 	def check_streams(self, silent = False):
 		if self.get("check_streams"):
-			query = []
+			query = [""]
 			streams = []
 			updated = []
 			try:
@@ -63,6 +67,9 @@ class moduleClass(botModule):
 					query.append(name[0])
 				s = requests.Session()
 				check = s.get("https://api.twitch.tv/kraken/streams",
+						headers={
+							"Client-ID": self.get("api_client_id")
+						},
 						params={
 							"channel":	",".join(query)
 						})
@@ -75,7 +82,6 @@ class moduleClass(botModule):
 					if not live:
 						self.channels.remove(channel)
 			except:
-				raise
 				for error in sys.exc_info():
 						print(str(error))
 				print("Something went wrong checking current streams")
@@ -125,9 +131,9 @@ class moduleClass(botModule):
 				self.send(e.target, msg[:383])
 				msg = msg[384:]
 			self.send(e.target, msg)
-		elif (command == "liststreams"):
+		elif (command == "liststreams") or (command == "streamlist"):
 			try:
-				query = self.db_query('SELECT * FROM streams')
+				query = self.db_query('SELECT * FROM streams ORDER BY totaltime DESC')
 				self.send(e.target, "Keeping track of these twitch streams: ")
 				for item in query:
 					self.send(e.target, str(item[0]) + ": " + item[1] + " (" + str(item[2]) + " minutes)")
@@ -152,7 +158,7 @@ class moduleClass(botModule):
 			if len(args) != 1:
 				self.send(e.target, "Give a single twitch stream to add to the list")
 			else:
-				if validate_twitch_name(args[0]):
+				if self.validate_twitch_name(args[0]):
 					try:
 						existing = self.db_query('SELECT channel FROM streams')
 						if (args[0], ) not in existing:

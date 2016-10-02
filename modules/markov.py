@@ -26,10 +26,10 @@ class moduleClass(botModule):
 	dbload = True
 
 	def init_settings(self):
-		self.set("replyrate", 1, "Percentage rate for randomly replying to messages")
+		self.set("replyrate", 0.01, "Percentage rate for randomly replying to messages, 0-1")
 		self.set("learning", False, "Learn new words from IRC channels joined")
 		self.set("rarewords", False, "Use rarer word algorithm when building sentences")
-		self.set("nickreplyrate", 100, "Percentage rate to reply when own nick is mentioned")
+		self.set("nickreplyrate", 1, "Percentage rate to reply when own nick is mentioned")
 		self.set("maxchain", 20, "Maximum length of generated sentences")
 		self.set("nicklesschans", "#discord", "Don't mention user nicks in these channels") #relay bot safety
 		self.set("cooldown", 2, "Cooldown in seconds before able to generate another reply")
@@ -160,8 +160,8 @@ class moduleClass(botModule):
 					self.db_commit()
 			except:
 				pass
-		roll = self.get("replyrate")>random.randint(0,99)
-		nickroll = self.get("nickreplyrate")>random.randint(0,99)
+		roll = self.get("replyrate")>random.random()
+		nickroll = self.get("nickreplyrate")>random.random()
 		named = own_nick.lower() in msg.lower()
 		cooled = time.time()>(self.lastmsg+self.get("cooldown"))
 		if (roll or (nickroll and named)) and cooled:

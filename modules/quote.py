@@ -40,7 +40,7 @@ class moduleClass(botModule):
             if self.buffer.get(args[0]) == '!quote':
                 self.send(e.target, "No quote stored")
             else:
-                if args[0] == self.bot.nickname:
+                if args[0] == self.bot.get("nickname"):
                     isquote = self.buffer.get(args[0]).split(' ', 2)
                     if isquote[0] == "Quote":
                         self.send(e.target, "No quote stored")
