@@ -226,7 +226,7 @@ Finally, an outline of some of the existing modules and how they work:
 	and later retrieved with just 'name' as a command itself. Useful for storing URLs or images with 
 	certain aliases. A txt file to dump saved tags to can be configured in config similar to the folder 
 	used for the flags module. Tags can be deleted by admins with 'deltag tagname'. 
-	(todo: optionally admin-protect flags i guess)
+	(todo: optionally admin-protect tags i guess)
 
 	twitch: Monitor a list of twitch streamers, announce when they go live or check who's currently
 	 live with 'streams', and count minutes bot has tracked stream live (for fun). Check who's 
