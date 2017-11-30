@@ -47,34 +47,38 @@ class moduleClass(botModule):
 					raise
 			content = ctt.getvalue()
 			img_in = Image.open(io.BytesIO(content))
-			img_size = img_in.size
-			if img_size[0] < img_size[1] and self.get("orent_check") == "long":
-				self.output("That image isn't long", ("", source, target, c, e))
-				raise
-			elif img_size[0] > img_size[1] and self.get("orent_check") == "tall":
-				self.output("That image isn't tall", ("", source, target, c, e))
-				raise
 			hash = hashlib.md5()
 			hash.update(content)
 			i = hash.hexdigest()
-			if self.get("save_unconverted"):
-				img_in.save(self.get("unconverted_folder") + i + '.png', 'PNG')
-			img_out = img_in
-			if self.get("resize"):
-				x = self.get("resize_width")
-				y = self.get("resize_height")
-				if self.get("border"):
-					border = self.get("border_size")
-					img_out = img_in.resize((x-(border*2),y-(border*2)), Image.ANTIALIAS)
-					img_out = ImageOps.expand(img_out,border=border,fill='black')
-				else:
-					img_out = img_in.resize((x,y), Image.ANTIALIAS)
-			img_out.save(self.get("local_folder") + i + '.png', 'PNG')
+			if img_in.format == "GIF" and not self.get("resize"):
+				img_in.save(self.get("local_folder") + i + '.gif', 'GIF', save_all=True)
+				self.send(e.target, self.get("web_folder") + i + ".gif")
+			else:
+				img_size = img_in.size
+				if img_size[0] < img_size[1] and self.get("orent_check") == "long":
+					self.output("That image isn't long", ("", source, target, c, e))
+					raise
+				elif img_size[0] > img_size[1] and self.get("orent_check") == "tall":
+					self.output("That image isn't tall", ("", source, target, c, e))
+					raise
+				if self.get("save_unconverted"):
+					img_in.save(self.get("unconverted_folder") + i + '.png', 'PNG')
+				img_out = img_in
+				if self.get("resize"):
+					x = self.get("resize_width")
+					y = self.get("resize_height")
+					if self.get("border"):
+						border = self.get("border_size")
+						img_out = img_in.resize((x-(border*2),y-(border*2)), Image.ANTIALIAS)
+						img_out = ImageOps.expand(img_out,border=border,fill='black')
+					else:
+						img_out = img_in.resize((x,y), Image.ANTIALIAS)
+				img_out.save(self.get("local_folder") + i + '.png', 'PNG')
+				self.send(e.target, self.get("web_folder") + i + ".png")
 			if self.get("flag_logfile") != "":
 				dump = open(self.get("flag_logfile"), "a")
 				dump.write(str(time.time()) + "\t" + e.source.nick + "\t" + i + "\n")
 				dump.close()
-			self.send(e.target, self.get("web_folder") + i + ".png")
 			return True
 		except:
 			self.send(e.target, "Problem flagging that")
