@@ -3,7 +3,7 @@ import random
 # rng module
 class moduleClass(botModule):
 	def do_command(self, c, e, command, args, admin):
-		if command == "random":
+		if  (command == "r")or(command == "random")or(command == "roll"):
 			if not args:
 				self.send(e.target, "One number to roll up to or two to roll in between")
 			elif len(args) == 1:

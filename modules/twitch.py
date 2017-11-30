@@ -85,6 +85,8 @@ class moduleClass(botModule):
 				for error in sys.exc_info():
 						print(str(error))
 				print("Something went wrong checking current streams")
+			if streams is None:
+				streams = []
 			for stream in streams:
 				new = True
 				for channel in self.channels:
@@ -142,6 +144,22 @@ class moduleClass(botModule):
 				for error in sys.exc_info():
 					print(str(error))
 				pass
+		elif (command == "streamtime") or (command == "timestreamed"):
+			if len(args) != 1:
+				self.send(e.target, "Give a single stream name to delete")
+			else:
+				try:
+					query = self.db_query('SELECT * FROM streams WHERE channel=?', (args[0],))
+					if len(query) == 0:
+						self.send(e.target, "Stream not found")
+					else:
+						for item in query:
+							self.send(e.target, item[1] + " (" + str(item[2]) + " minutes)")
+				except:
+					self.send(e.target, "DB error")
+					for error in sys.exc_info():
+						print(str(error))
+					pass
 		elif (command == "delstream") and args and admin:
 			if len(args) != 1:
 				self.send(e.target, "Give a single stream name to delete")
@@ -152,6 +170,21 @@ class moduleClass(botModule):
 					self.send(e.target, "Deleted " + args[0] + " from stream list")
 				except:
 					self.send(e.target, "Something went wrong deleting " + args[0] + " from list")
+					for error in sys.exc_info():
+						print(str(error))
+		elif (command == "setstreamtime") and admin:
+			if len(args) != 2:
+				self.send(e.target, "Usage: setstreamtime streamname time (stream name 'all' for all)")
+			else:
+				try:
+					if(args[0]=="all"):
+						self.db_query("UPDATE streams SET totaltime=?", (int(args[1]), ))
+					else:
+						self.db_query("UPDATE streams SET totaltime=? WHERE channel=?", (int(args[1]),args[0]))
+					self.db_commit()
+					self.send(e.target, "Updated " + args[0] + " to have " + args[1] + " minutes streamed.")
+				except:
+					self.send(e.target, "Something went wrong changing " + args[0] + " time")
 					for error in sys.exc_info():
 						print(str(error))
 		elif (command == "addstream") and args and admin:

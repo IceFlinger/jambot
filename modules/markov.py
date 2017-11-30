@@ -33,6 +33,8 @@ class moduleClass(botModule):
 		self.set("maxchain", 20, "Maximum length of generated sentences")
 		self.set("nicklesschans", "#discord", "Don't mention user nicks in these channels") #relay bot safety
 		self.set("cooldown", 2, "Cooldown in seconds before able to generate another reply")
+		self.set("altnick", "jambot", "Respond to an alternate nickname as if it was our own")
+		self.set("bridged", False, "Name fixes for discord bridged mode")
 
 	def help(command):
 		if (command == "words"):
@@ -132,7 +134,12 @@ class moduleClass(botModule):
 			self.lastmsg = time.time()
 
 	def on_pubmsg(self, c, e):
-		msg = mangle_line(e.arguments[0])
+		msg = ""
+		if self.get("bridged"):
+			msg_end = e.arguments[0].index(">")
+			msg = mangle_line(e.arguments[0][msg_end:])
+		else:
+			msg = mangle_line(e.arguments[0])
 		own_nick = c.nickname
 		lametrig = (len(msg.split())==2 and msg.split()[0]==own_nick) #People just baiting replies, don't wanna learn single word replies
 		if self.get("learning") and not lametrig:
@@ -162,7 +169,7 @@ class moduleClass(botModule):
 				pass
 		roll = self.get("replyrate")>random.random()
 		nickroll = self.get("nickreplyrate")>random.random()
-		named = own_nick.lower() in msg.lower()
+		named = (own_nick.lower() in msg.lower()) or (self.get("altnick").lower() in msg.lower())
 		cooled = time.time()>(self.lastmsg+self.get("cooldown"))
 		if (roll or (nickroll and named)) and cooled:
 			#t = threading.Thread(target=self.build_sentence, args=(c, e, msg))

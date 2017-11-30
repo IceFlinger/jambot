@@ -22,6 +22,7 @@ class moduleClass(botModule):
 		self.set("border", True, "Switch for adding a border to resized images")
 		self.set("resize_width", 500, "Width of resized images")
 		self.set("resize_height", 192, "Height of resized images")
+		self.set("flag_logfile", "", "Local filepath for uploaded flag logs")
 		self.set("border_size", 1, "Width of border to add to resized images if enabled")
 		self.set("orent_check", "none", "set to 'long' or 'tall' to only accept images oriented that way")
 
@@ -69,6 +70,10 @@ class moduleClass(botModule):
 				else:
 					img_out = img_in.resize((x,y), Image.ANTIALIAS)
 			img_out.save(self.get("local_folder") + i + '.png', 'PNG')
+			if self.get("flag_logfile") != "":
+				dump = open(self.get("flag_logfile"), "a")
+				dump.write(str(time.time()) + "\t" + e.source.nick + "\t" + i + "\n")
+				dump.close()
 			self.send(e.target, self.get("web_folder") + i + ".png")
 			return True
 		except:
