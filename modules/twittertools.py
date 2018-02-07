@@ -140,7 +140,7 @@ class moduleClass(botModule):
 			pass
 
 	def on_send(self, chan, msg, modulename):
-		if modulename != "twittertools":
+		if modulename in self.get("tweet_modules"):
 			self.lastsentence[chan]=msg
 		try:
 			lencheck = (len(msg.split()) >= int(self.get("tweet_length")))
@@ -149,8 +149,8 @@ class moduleClass(botModule):
 			modcheck = (modulename in self.get("tweet_modules").split())
 			if (lencheck and timecheck and autocheck and modcheck):
 				t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
-				t.statuses.update(status=msg)
-				self.send(chan, "*")
+				response = t.statuses.update(status=msg)
+				self.send(chan, "https://twitter.com/" + self.get("account_name") + "/status/" + response["id_str"])
 				self.tweettimer = time.time() + random.randint(self.get("tweetdelay_lower"), self.get("tweetdelay_upper"))
 		except:
 			for error in sys.exc_info():
@@ -163,7 +163,7 @@ class moduleClass(botModule):
 			if self.get("tweeting"):
 				if len(args) == 0:
 					try:
-						if ((self.lastsentence[e.target] != "") and (e.target in self.get("tweet_modules").split())):
+						if (self.lastsentence[e.target] != ""):
 							t = Twitter(auth=OAuth(self.get("access_token"), self.get("access_secret"),self.get("consumer_key"), self.get("consumer_secret")))
 							t.statuses.update(status=self.lastsentence[e.target])
 							msg = "Tweeted \"" + self.lastsentence[e.target] + "\""

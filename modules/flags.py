@@ -51,7 +51,7 @@ class moduleClass(botModule):
 			hash.update(content)
 			i = hash.hexdigest()
 			if img_in.format == "GIF" and not self.get("resize"):
-				img_in.save(self.get("local_folder") + i + '.gif', 'GIF', save_all=True)
+				img_in.save(self.get("local_folder") + i + '.gif', 'GIF', save_all=True, optimize=False)
 				self.send(e.target, self.get("web_folder") + i + ".gif")
 			else:
 				img_size = img_in.size
