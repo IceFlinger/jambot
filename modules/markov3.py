@@ -1,4 +1,5 @@
 from jambot import botModule
+from random import choice
 import pycurl
 import sys
 import random
@@ -7,6 +8,7 @@ import time
 import string
 import threading
 import math
+
 from io import BytesIO
 #Markov chain jambot module
 #By ice at irc.kickinrad.tv
@@ -159,7 +161,9 @@ class moduleClass(botModule):
 						current_pair = (next_link[0], next_link[1])
 		except:
 			raise
-		sentence = " ".join(phrase)[1:]
+		sentence = " ".join(phrase)
+		if sentence[0] == " ":
+			sentence = sentence[1:]
 		if sentence != "":
 			self.send(e.target, sentence)
 
