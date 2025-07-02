@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import irc.client
 import irc.bot
+import functools
 import jaraco.stream.buffer as ircbuffer
 import sqlite3
 import configparser
@@ -159,7 +160,10 @@ class botMain(irc.bot.SingleServerIRCBot):
 		irc.client.ServerConnection.buffer_class = ircbuffer.LenientDecodingLineBuffer
 		reactor = irc.connection.Factory()
 		if self.get("ssl"):
-			reactor = irc.connection.Factory(wrapper=ssl.wrap_socket)
+			context = ssl.create_default_context()
+			context.check_hostname = False
+			wrapper = functools.partial(context.wrap_socket)
+			reactor = irc.connection.Factory(wrapper=wrapper)
 		irc.bot.SingleServerIRCBot.__init__(self, self.server, self.get("nickname"), self.get("realname"), connect_factory=reactor)
 		self.start()
 

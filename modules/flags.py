@@ -25,12 +25,16 @@ class moduleClass(botModule):
 		self.set("flag_logfile", "", "Local filepath for uploaded flag logs")
 		self.set("border_size", 1, "Width of border to add to resized images if enabled")
 		self.set("orent_check", "none", "set to 'long' or 'tall' to only accept images oriented that way")
+		self.set("cacheing", True, "Cache the image list until a new flag is uploaded")
 
 
 	def on_start(self, c, e):
 		self.last_update = 0
+		self.cached = False
+		self.cached_list = []
 
 	def upload_flag(self, e, url):
+		self.cached = False
 		try:
 			if self.get("web_folder") in url:
 				self.send(e.target, "Don't reupload flags")
@@ -82,6 +86,7 @@ class moduleClass(botModule):
 			return True
 		except:
 			self.send(e.target, "Problem flagging that")
+			raise
 			if debug:
 				raise
 			else:
@@ -97,9 +102,14 @@ class moduleClass(botModule):
 		elif command == "flag" and args:
 			self.send(e.target, "Wait " + str(int((self.last_update + self.get("upload_delay")) - time.time())) + " seconds")
 		elif command == "flag" and not args:
-			r = requests.get(self.get("web_folder"))
-			d = html.fromstring(r.content)
-			imglist = d.xpath('//a[@href]/@href')
-			imglist = imglist[5:] #first 4 links are random index shit, lazy way to skip (add check for image extension)
+			if (not self.cached) or (not self.get("cacheing")):
+				r = requests.get(self.get("web_folder"))
+				d = html.fromstring(r.content)
+				imglist = d.xpath('//a[@href]/@href')
+				imglist = imglist[5:] #first 4 links are random index shit, lazy way to skip (add check for image extension)
+				self.cached_list = imglist
+				self.cached = True
+			else:
+				imglist  = self.cached_list
 			id = random.randint(0,len(imglist)-1)
 			self.send(e.target, self.get("web_folder") + imglist[id])

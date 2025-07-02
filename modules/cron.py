@@ -74,8 +74,11 @@ def validate_crontime(timestring): #returns true if given string is a valid cron
 
 class moduleClass(botModule):
 	dbload = True
-	def on_start(self, c, e):
+
+	def init_settings(self):
 		self.cron_schedule(60-time.localtime(time.time()).tm_sec)
+	
+	def on_start(self, c, e):
 		self.ownhost = c.nickname
 		self.c = c
 
