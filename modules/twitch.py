@@ -3,6 +3,7 @@ import sys
 import requests
 from threading import Timer
 import time
+import twitch
 #Twitch module
 
 def lim_space(string, count):
@@ -23,6 +24,7 @@ class moduleClass(botModule):
 		self.set("max_gamelength", 16, "Maximum length to print of game titles")
 		self.set("max_statuslength", 24, "Maximum length to print of game titles")
 		self.set("api_client_id", "", "Client ID for twitch API usage", True)
+		self.logger = logging.getLogger("jambot.twitch")
 
 	def on_load_db(self):
 		self.db_query("CREATE TABLE IF NOT EXISTS streams (id INTEGER PRIMARY KEY ASC, channel text, totaltime INTEGER DEFAULT 0)")
@@ -83,8 +85,8 @@ class moduleClass(botModule):
 						self.channels.remove(channel)
 			except:
 				for error in sys.exc_info():
-						print(str(error))
-				print("Something went wrong checking current streams")
+						logging.info(str(error))
+				logging.info("Something went wrong checking current streams")
 			if streams is None:
 				streams = []
 			for stream in streams:
@@ -103,10 +105,10 @@ class moduleClass(botModule):
 						updated.append(stream["channel"]["name"])
 					except:
 						for error in sys.exc_info():
-							print(str(error))
-						print("Error updating time for stream " + stream["channel"]["name"])
+							logging.info(str(error))
+						logging.info("Error updating time for stream " + stream["channel"]["name"])
 			if updated:
-				print(str(time.time()) + " Updated stream times for: " + ",".join(updated))
+				logging.info(str(time.time()) + " Updated stream times for: " + ",".join(updated))
 
 	def check_schedule(self, checktimer):
 		timer = Timer(checktimer, self.check_execute, ())
@@ -142,7 +144,7 @@ class moduleClass(botModule):
 			except:
 				self.send(e.target, "DB error")
 				for error in sys.exc_info():
-					print(str(error))
+					logging.info(str(error))
 				pass
 		elif (command == "streamtime") or (command == "timestreamed"):
 			if len(args) != 1:
@@ -158,7 +160,7 @@ class moduleClass(botModule):
 				except:
 					self.send(e.target, "DB error")
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 					pass
 		elif (command == "delstream") and args and admin:
 			if len(args) != 1:
@@ -171,7 +173,7 @@ class moduleClass(botModule):
 				except:
 					self.send(e.target, "Something went wrong deleting " + args[0] + " from list")
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 		elif (command == "setstreamtime") and admin:
 			if len(args) != 2:
 				self.send(e.target, "Usage: setstreamtime streamname time (stream name 'all' for all)")
@@ -186,7 +188,7 @@ class moduleClass(botModule):
 				except:
 					self.send(e.target, "Something went wrong changing " + args[0] + " time")
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 		elif (command == "addstream") and args and admin:
 			if len(args) != 1:
 				self.send(e.target, "Give a single twitch stream to add to the list")
@@ -203,6 +205,6 @@ class moduleClass(botModule):
 					except:
 						self.send(e.target, "Something went wrong inserting into database")
 						for error in sys.exc_info():
-							print(str(error))
+							logging.info(str(error))
 				else:
 					self.send(e.target, args[0] + " isn't a real twitch stream")

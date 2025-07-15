@@ -1,28 +1,32 @@
 from jambot import botModule
+import logging
 #Monitor Module
 class moduleClass(botModule):
+	def init_settings(self):
+		self.logger = logging.getLogger("jambot.monitor")
+
 	def on_start(self, c, e):
 		pass
 
 	def on_pubmsg(self, c, e):
-		print("Public msg:")
-		print(vars(e))
+		logging.info("Public msg:")
+		logging.info(vars(e))
 
 	def on_send(self, chan, msg, modulename):
-		print("Sent msg to " + chan + " from " + modulename + ":")
-		print(msg)
+		logging.info("Sent msg to " + chan + " from " + modulename + ":")
+		logging.info(msg)
 
 	def on_event(self, c, e):
-		print("Channel Event:")
-		print(vars(e))
+		logging.info("Channel Event:")
+		logging.info(vars(e))
 
 	def do_command(self, c, e, command, args, admin):
-		print("Command Event:")
-		print(vars(e))
+		logging.info("Command Event:")
+		logging.info(vars(e))
 
 	def on_privmsg(self, c, e):
-		print("Private Event:")
-		print(vars(e))
+		logging.info("Private Event:")
+		logging.info(vars(e))
 
 	def on_shutdown(self):
-		print("Shutting down...")
+		logging.info("Shutting down...")

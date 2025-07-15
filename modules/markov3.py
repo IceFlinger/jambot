@@ -5,6 +5,7 @@ import sys
 import random
 import re
 import time
+import logging
 import string
 import threading
 import math
@@ -37,6 +38,7 @@ class moduleClass(botModule):
 		self.set("cooldown", 2, "Cooldown in seconds before able to generate another reply")
 		self.set("altnick", "jambot", "Respond to an alternate nickname as if it was our own")
 		self.set("bridged", False, "Name fixes for discord bridged mode")
+		self.logger = logging.getLogger("jambot.markov3")
 
 	def help(command):
 		if (command == "words"):
@@ -61,7 +63,7 @@ class moduleClass(botModule):
 				newpairs[key] += pair[2]
 			else:
 				newpairs[key] = pair[2]
-		#print(newpairs)
+		#logging.info(newpairs)
 		sort = sorted(newpairs, key=newpairs.get, reverse=True)
 		for pair in sort:
 			roll = random.randint(1,100)
@@ -113,7 +115,7 @@ class moduleClass(botModule):
 						exist_contexts.append(context)
 			if exist_contexts:
 				phrase_seed = self.select_context(exist_contexts)
-				#print(phrase_seed)
+				#logging.info(phrase_seed)
 				if phrase_seed[0] == "#nick":
 					phrase.append(sender)
 				else:
@@ -140,7 +142,7 @@ class moduleClass(botModule):
 						current_pair = (next_link[1], None)
 					else:
 						current_pair = (next_link[1], next_link[2])
-				#print(phrase, end=" ",flush=True)
+				#logging.info(phrase, end=" ",flush=True)
 				current_pair = phrase_seed
 				while current_pair[0] != None: #begin building sentence backwards from seed word
 					next_contexts = self.db_query("SELECT * FROM contexts3 WHERE (LOWER(word2) LIKE LOWER(?)) AND (LOWER(word3) LIKE LOWER(?)) ORDER BY freq DESC", current_pair)
@@ -169,7 +171,7 @@ class moduleClass(botModule):
 
 	def learn_sentence(self, msg):
 		try:
-			#print(words)
+			#logging.info(words)
 			words = msg.split()
 			if len(words)>2:
 				named = False
@@ -183,7 +185,7 @@ class moduleClass(botModule):
 				index = 0
 				if not (named and len(words)<5):
 					if "jambot" in words:
-						print(words)
+						logging.info(words)
 						exit()
 					if (len(words) > 3):
 						self.db_query("INSERT OR IGNORE INTO contexts3 (word2, word3) VALUES (?, ?)", (words[0], words[1]))
@@ -247,7 +249,7 @@ class moduleClass(botModule):
 
 	def do_command(self, c, e, command, args, admin):
 		if command=="feed" and admin and args:
-			print("Downloading: " + args[0])
+			logging.info("Downloading: " + args[0])
 			self.send(e.target, "Downloading: " + args[0])
 			textbytes = BytesIO()
 			try:
@@ -258,7 +260,7 @@ class moduleClass(botModule):
 				textconn.close()
 				text = textbytes.getvalue().decode('iso-8859-1').split('\n')
 				linecount = 0
-				print("Learning...")
+				logging.info("Learning...")
 				self.send(e.target, "Learning")
 				try:
 					multi = 1
@@ -269,16 +271,16 @@ class moduleClass(botModule):
 						self.learn_sentence(line)
 						linecount += 1
 						if ((linecount%1000)==0):
-							print(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
+							logging.info(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
 					self.db_commit()
 				except:
 					self.send(e.target, "Interrupted while learning from file (Something else accessing DB?)")
 					raise
 				try:
-					print("Learned from " + str(linecount) + " lines")
+					logging.info("Learned from " + str(linecount) + " lines")
 					self.send(e.target, "Learned from " + str(linecount) + " lines")
 					self.db_commit()
-					print("Commited to DB")
+					logging.info("Commited to DB")
 				except:
 					pass
 			except:

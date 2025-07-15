@@ -5,6 +5,7 @@ import random
 import re
 import time
 import string
+import logging
 import threading
 import math
 from io import BytesIO
@@ -35,6 +36,7 @@ class moduleClass(botModule):
 		self.set("cooldown", 2, "Cooldown in seconds before able to generate another reply")
 		self.set("altnick", "jambot", "Respond to an alternate nickname as if it was our own")
 		self.set("bridged", False, "Name fixes for discord bridged mode")
+		self.logger = logging.getLogger("jambot.markov")
 
 	def help(command):
 		if (command == "words"):
@@ -93,11 +95,11 @@ class moduleClass(botModule):
 					if chainlength > self.get("maxchain")/2:
 						newword = None
 					currentword = newword
-				print(phrase, end=" ",flush=True)
+				logging.info(phrase, end=" ",flush=True)
 				currentword = seedword
 				chainlength = 0
 				while currentword != None:
-					print(currentword, end=" ",flush=True)
+					logging.info(currentword, end=" ",flush=True)
 					next_words = self.db_query("SELECT * FROM contexts WHERE LOWER(word1) LIKE LOWER(?) ORDER BY freq ASC", [currentword])
 					total_contexts = 0
 					for word in next_words:
@@ -126,7 +128,7 @@ class moduleClass(botModule):
 					if chainlength > self.get("maxchain")/2:
 						newword = None
 					currentword = newword
-				print("")
+				logging.info("")
 		except:
 			raise
 		if phrase != "":
@@ -186,7 +188,7 @@ class moduleClass(botModule):
 
 	def do_command(self, c, e, command, args, admin):
 		if command=="feed" and admin and args:
-			print("Downloading: " + args[0])
+			logging.info("Downloading: " + args[0])
 			self.send(e.target, "Downloading: " + args[0])
 			textbytes = BytesIO()
 			try:
@@ -197,7 +199,7 @@ class moduleClass(botModule):
 				textconn.close()
 				text = textbytes.getvalue().decode('iso-8859-1').split('\n')
 				linecount = 0
-				print("Learning...")
+				logging.info("Learning...")
 				self.send(e.target, "Learning")
 				try:
 					multi = 1
@@ -217,14 +219,14 @@ class moduleClass(botModule):
 							self.db_query("UPDATE contexts SET freq = freq + ? WHERE word1=? AND word2 is ''", (multi, words[-1]))
 						linecount += 1
 						if ((linecount%1000)==0):
-							print(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
+							logging.info(str(linecount/1000).split(".")[0] + "k lines, ", end="" , flush=True)
 				except:
 					self.send(e.target, "Interrupted while learning from file (Something else accessing DB?)")
 				try:
-					print("Learned from " + str(linecount) + " lines")
+					logging.info("Learned from " + str(linecount) + " lines")
 					self.send(e.target, "Learned from " + str(linecount) + " lines")
 					self.db_commit()
-					print("Commited to DB")
+					logging.info("Commited to DB")
 				except:
 					pass
 			except:

@@ -1,10 +1,12 @@
 from jambot import botModule
+import logging
 
 
 # g8r module
 class moduleClass(botModule):
 	def init_settings(self):
 		self.set("g8r", True, "Enable/disable g8r trap")
+		self.logger = logging.getLogger("jambot.g8r")
 
 	def on_start(self, c, e):
 		self.bottom = False

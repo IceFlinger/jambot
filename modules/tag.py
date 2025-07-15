@@ -1,5 +1,6 @@
 from jambot import botModule
 import sys
+import logging
 
 # Tagging module
 class moduleClass(botModule):
@@ -12,6 +13,7 @@ class moduleClass(botModule):
 	def init_settings(self):
 		self.set("local_dumpfile", "", "Local file to dump tags to when requested", True)
 		self.set("web_dumpfile", "", "Web location of dumped text file to return on dumps")
+		self.logger = logging.getLogger("jambot.tag")
 
 	def on_load_db(self):
 		self.db_query("CREATE TABLE IF NOT EXISTS tags (id INTEGER PRIMARY KEY ASC, name text UNIQUE NOT NULL, tagtext text DEFAULT '')")
@@ -49,7 +51,7 @@ class moduleClass(botModule):
 				except:
 					self.send(e.target, "Something went wrong deleting " + args[0] + " from list")
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 		else:
 			tags = self.db_query("SELECT name FROM tags")
 			for tag in tags:

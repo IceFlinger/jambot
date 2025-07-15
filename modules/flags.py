@@ -5,6 +5,7 @@ from lxml import html
 import random
 import time
 import hashlib
+import logging
 import io
 from PIL import Image, ImageOps
 
@@ -26,6 +27,7 @@ class moduleClass(botModule):
 		self.set("border_size", 1, "Width of border to add to resized images if enabled")
 		self.set("orent_check", "none", "set to 'long' or 'tall' to only accept images oriented that way")
 		self.set("cacheing", True, "Cache the image list until a new flag is uploaded")
+		self.logger = logging.getLogger("jambot.flags")
 
 
 	def on_start(self, c, e):
@@ -86,11 +88,6 @@ class moduleClass(botModule):
 			return True
 		except:
 			self.send(e.target, "Problem flagging that")
-			raise
-			if debug:
-				raise
-			else:
-				pass
 		return False
 
 	def do_command(self, c, e, command, args, admin):

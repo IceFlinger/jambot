@@ -9,12 +9,14 @@ import traceback
 import importlib
 import ssl
 import sys
+import logging
 
 # jambot modular IRC bot
-# by ice at irc.kickinrad.tv
+# by iceflinger on discord
+
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 
 config_file = "jambot.cfg"
-debug = False
 
 class botModule():
 	dbload = False
@@ -113,7 +115,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 			self.settings[module] = {}
 			newmodule = moduleClass(module, config_file, self)
 			self.modules.append(newmodule)
-			print("Loaded " + module)
+			logging.info("Loaded " + module)
 
 	def _load_module_settings(self, loadtarget):
 		error = True
@@ -156,7 +158,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 		self._load_settings()
 
 	def initialize(self):
-		print("Connecting...")
+		logging.info("Connecting...")
 		irc.client.ServerConnection.buffer_class = ircbuffer.LenientDecodingLineBuffer
 		reactor = irc.connection.Factory()
 		if self.get("ssl"):
@@ -168,7 +170,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 		self.start()
 
 	def on_welcome(self, c, e):
-		print("Connected!")
+		logging.info("Connected!")
 		for channel in self.get("channels"):
 			c.join(channel)
 		self.c = c
@@ -196,11 +198,8 @@ class botMain(irc.bot.SingleServerIRCBot):
 					module.on_pubmsg(c, e)
 		except:
 			for error in sys.exc_info():
-				print(str(error))
-			if debug:
-				raise
-			else:
-				pass
+				logging.info(str(error))
+			pass
 
 	def on_privmsg(self, c, e):
 		try:
@@ -211,11 +210,8 @@ class botMain(irc.bot.SingleServerIRCBot):
 					module.on_privmsg(c, e)
 		except:
 			for error in sys.exc_info():
-				print(str(error))
-			if debug:
-				raise
-			else:
-				pass
+				logging.info(str(error))
+			pass
 
 	def on_command(self, c, e):
 		command = e.arguments[0].split()[0].split(self.get("command_prefix"))[1]
@@ -443,7 +439,7 @@ class botMain(irc.bot.SingleServerIRCBot):
 			module.shutdown()
 		if self.db != None:
 			self.db.close()
-		print("Disconnecting...")
+		logging.info("Disconnecting...")
 		self.die()
 
 

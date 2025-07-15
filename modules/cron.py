@@ -2,6 +2,7 @@ from jambot import botModule
 import irc #first module to need this itself
 from threading import Timer
 import time
+import logging
 import sys
 
 # Cron module
@@ -77,6 +78,7 @@ class moduleClass(botModule):
 
 	def init_settings(self):
 		self.cron_schedule(60-time.localtime(time.time()).tm_sec)
+		self.logger = logging.getLogger("jambot.cron")
 	
 	def on_start(self, c, e):
 		self.ownhost = c.nickname
@@ -124,7 +126,7 @@ class moduleClass(botModule):
 			except:
 				self.send(e.target, "DB error")
 				for error in sys.exc_info():
-					print(str(error))
+					logging.info(str(error))
 				pass
 		elif (command == "delcron") and args and admin:
 			if len(args) != 1:
@@ -138,7 +140,7 @@ class moduleClass(botModule):
 				except:
 					self.send(e.target, "Something went wrong deleting " + args[0] + " from list")
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 
 	def cron_execute(self):
 		try:
@@ -146,16 +148,16 @@ class moduleClass(botModule):
 			for item in query:
 				try:
 					if check_crontime(item[1]):
-						print("cron event: " + str(item[0]) + ": " + item[1] + " " + item[2] + " " + item[3])
+						logging.info("cron event: " + str(item[0]) + ": " + item[1] + " " + item[2] + " " + item[3])
 						self.fake_command(item[2], item[3])
 				except:
-					print("cron error!!: " + str(item[0]) + ": " + item[1] + " " + item[2] + " " + item[3])
+					logging.info("cron error!!: " + str(item[0]) + ": " + item[1] + " " + item[2] + " " + item[3])
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 		except:
-			print("DB error?")
+			logging.info("DB error?")
 			for error in sys.exc_info():
-				print(str(error))
+				logging.info(str(error))
 			pass
 		self.cron_schedule(60)
 

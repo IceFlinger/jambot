@@ -1,9 +1,14 @@
 from jambot import botModule
+import logging
 import sys
 
 # Quote module
 class moduleClass(botModule):
 	dbload = True
+
+	def init_settings(self):
+		self.logger = logging.getLogger("jambot.alert")
+
 	def on_load_db(self):
 		self.db_query("CREATE TABLE IF NOT EXISTS alert (id INTEGER PRIMARY KEY ASC, name text)")
 		self.db_commit()
@@ -25,7 +30,7 @@ class moduleClass(botModule):
 			except:
 				self.send(e.target, "Something went wrong inserting into database")
 				for error in sys.exc_info():
-					print(str(error))
+					logging.info(str(error))
 		if (command == "realert"):
 			try:
 				existing = self.db_query('SELECT name FROM alert')
@@ -38,7 +43,7 @@ class moduleClass(botModule):
 			except:
 				self.send(e.target, "Something went wrong removing from database")
 				for error in sys.exc_info():
-					print(str(error))
+					logging.info(str(error))
 		elif (command == "listalert") and admin:
 			try:
 				query = self.db_query('SELECT * FROM alert')
@@ -48,7 +53,7 @@ class moduleClass(botModule):
 			except:
 				self.send(e.source.nick, "DB error")
 				for error in sys.exc_info():
-					print(str(error))
+					logging.info(str(error))
 		if (command == "alert"):
 			ignore = self.db_query('SELECT name FROM alert')
 			for user in self.userlist(c, e):

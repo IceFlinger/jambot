@@ -1,4 +1,5 @@
 from jambot import botModule
+import logging
 #Small sample module
 #self.send(chan, msg):
 #self.db_query(statement, params)
@@ -24,6 +25,7 @@ class moduleClass(botModule):
 		self.set("secretfloat", 4.34234, "a protected float setting",True)
 		self.set("string", "default string", "a regular string setting")
 		self.set("secretstring", "default secret string", "a protected string setting", True)
+		self.logger = logging.getLogger("jambot.sample")
 		#These values can later be retrieved with:
 		# self.get(setting)
 		# Anything initialized here can be changed on the fly with the main bot's 'set' command
@@ -60,8 +62,8 @@ class moduleClass(botModule):
 	def on_send(self, chan, msg, modulename):
 		#This hook is triggered whenever a module, including this one, uses self.send()
 		if modulename != self.name: #self.name returns our own module name
-			print("Module " + modulename + " sent message " + msg + " to channel " + chan)
-			#Print statements are useful for console debugging
+			logging.info("Module " + modulename + " sent message " + msg + " to channel " + chan)
+			#logging.info statements are useful for console debugging
 
 	def on_pubmsg(self, c, e):
 		#This hook is triggered by any public channel message, e.target can be expected to be a public channel
@@ -80,7 +82,7 @@ class moduleClass(botModule):
 	def on_privmsg(self, c, e):
 		#This hook is triggered by any event where the bot itself is expected to be e.target (pings, privmsgs)
 		if e.type == "privmsg":
-			print("Secret from " + e.source.nick + ": " + e.arguments[0])
+			logging.info("Secret from " + e.source.nick + ": " + e.arguments[0])
 
 	def shutdown(self):
 		#Run whenever the bot is shutdown, useful for closing opened files if needed (db is handled by main bot already)

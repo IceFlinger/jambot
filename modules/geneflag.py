@@ -5,6 +5,7 @@ from lxml import html
 import random
 import time
 import hashlib
+import logging
 import io
 from PIL import Image, ImageOps
 
@@ -15,6 +16,7 @@ class moduleClass(botModule):
 		self.set("web_folder", "https://your.domain/folder/", "Web prefix of where to retrieve uploaded images")
 		self.set("cacheing", True, "Cache the image list until a new flag is uploaded")
 		self.set("command", "flag", "Trigger word for this flag folder instance")
+		self.logger = logging.getLogger("jambot.geneflag")
 
 	def on_start(self, c, e):
 		self.last_update = 0

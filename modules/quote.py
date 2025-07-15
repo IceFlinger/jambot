@@ -1,5 +1,5 @@
 from jambot import botModule
-
+import logging
 
 # Quote module
 class moduleClass(botModule):
@@ -11,6 +11,9 @@ class moduleClass(botModule):
     def on_start(self, c, e):
         self.buffer = dict()
 
+    def init_settings(self):
+        self.logger = logging.getLogger("jambot.quote")
+
     def on_load_db(self):
         self.db_query("CREATE TABLE IF NOT EXISTS quotes (nick text, quote text)")
         self.db_commit()
@@ -19,7 +22,7 @@ class moduleClass(botModule):
         self.buffer.update({e.source.nick:e.arguments[0]})
 
     def on_send(self, chan, msg, modulename):
-        print(modulename)
+        logging.info(modulename)
         if modulename != 'markov' and modulename != 'say':
             return
         else:
@@ -32,7 +35,7 @@ class moduleClass(botModule):
     def do_command(self, c, e, command, args, admin):
         if command == "addquote" and args:
             try:
-                print(self.buffer[args[0]])
+                logging.info(self.buffer[args[0]])
             except KeyError:
                 self.send(e.target, "No quote stored")
                 return
@@ -53,7 +56,7 @@ class moduleClass(botModule):
                 pass
 
         elif (command == "debug" and admin):
-                print(self.buffer)
+                logging.info(self.buffer)
 
         elif ((command == "q") or (command == "quote")):
             query = self.db_query('SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1')[0]

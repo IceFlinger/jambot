@@ -1,6 +1,7 @@
 from jambot import botModule
 import sys
 import requests
+import logging
 #Google module
 class moduleClass(botModule):
 	def help(command):
@@ -11,6 +12,7 @@ class moduleClass(botModule):
 	def init_settings(self):
 		self.set("apikey", "", "API key for google services",True)
 		self.set("search_engine_id", "", "Search engine ID for google services",True)
+		self.logger = logging.getLogger("jambot.google")
 
 	def on_start(self, c, e):
 		pass
@@ -47,7 +49,7 @@ class moduleClass(botModule):
 					msg = "Problem googling that"
 					self.send(e.target, msg)
 					for error in sys.exc_info():
-						print(str(error))
+						logging.info(str(error))
 					pass
 			else:
 				self.send(e.target, "Please say what to search for.")

@@ -1,5 +1,6 @@
 from jambot import botModule
 import time
+import logging
 
 
 #relay module
@@ -9,6 +10,7 @@ class moduleClass(botModule):
 		self.set("buffer", 5, "Maximum number of lines to keep in relay")
 		self.set("timestamp_format", "[%m/%d.%H:%M:%S]", "Timestamp format (https://docs.python.org/3.5/library/time.html?highlight=time#time.strftime)")
 		self.set("intro", "Latest messages:", "String to intro the relay playback")
+		self.logger = logging.getLogger("jambot.relay")
 
 	def timestamp(self):
 		return time.strftime(self.get("timestamp_format"))
